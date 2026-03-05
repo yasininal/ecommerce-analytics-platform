@@ -1,5 +1,5 @@
 from langchain_core.prompts import PromptTemplate
-from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.output_parsers import StrOutputParser
 from agents.state import State
 import os
@@ -30,7 +30,7 @@ prompt = PromptTemplate.from_template(
 )
 
 def build_sql_chain():
-    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0, api_key=os.getenv("OPENAI_API_KEY"))
+    llm = ChatGoogleGenerativeAI(model="gemini-pro", temperature=0, google_api_key=os.getenv("GOOGLE_API_KEY"))
     return prompt | llm | StrOutputParser()
 
 def sql_node(state: State) -> State:

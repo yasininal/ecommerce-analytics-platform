@@ -47,8 +47,8 @@ async def chat_endpoint(request: ChatRequest):
     }
     
     try:
-        if not os.getenv("OPENAI_API_KEY"):
-            raise HTTPException(status_code=500, detail="OPENAI_API_KEY environment variable not set")
+        if not os.getenv("GOOGLE_API_KEY"):
+            raise HTTPException(status_code=500, detail="GOOGLE_API_KEY environment variable not set")
             
         final_state = graph.invoke(initial_state)
 

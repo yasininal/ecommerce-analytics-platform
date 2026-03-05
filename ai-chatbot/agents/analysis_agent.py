@@ -1,5 +1,5 @@
 from langchain_core.prompts import PromptTemplate
-from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.output_parsers import StrOutputParser
 from agents.state import State
 import os
@@ -16,7 +16,7 @@ prompt = PromptTemplate.from_template(
 )
 
 def build_analysis_chain():
-    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.2, api_key=os.getenv("OPENAI_API_KEY"))
+    llm = ChatGoogleGenerativeAI(model="gemini-pro", temperature=0.2, google_api_key=os.getenv("GOOGLE_API_KEY"))
     return prompt | llm | StrOutputParser()
 
 def analysis_node(state: State) -> State:
@@ -28,8 +28,9 @@ def analysis_node(state: State) -> State:
         state["final_output"] = state["analysis_text"]
         return state
         
-    # Cap size to prevent massive token usage
-    data_str = str(data)[:3000]
+    # Cap size to prevent massive token usage by limiting array items
+    capped_data = data[:100] if len(data) > 100 else data
+    data_str = str(capped_data)
         
     chain = build_analysis_chain()
     analysis = chain.invoke({

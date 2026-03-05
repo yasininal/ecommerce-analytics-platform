@@ -2,10 +2,10 @@ USE ecommerce_analytics;
 
 -- Insert Users
 INSERT INTO users (email, password_hash, role_type, gender) VALUES
-('admin@platform.com', 'hashed_pass_1', 'ADMIN', 'OTHER'),
-('seller1@store.com', 'hashed_pass_2', 'CORPORATE', 'FEMALE'),
-('buyer1@random.com', 'hashed_pass_3', 'INDIVIDUAL', 'MALE'),
-('buyer2@random.com', 'hashed_pass_4', 'INDIVIDUAL', 'FEMALE');
+('admin@platform.com', '$2b$12$NHkZS8Ov2YPU/Lxq8uyAIOurI21EOZ8d0pyH77R1ETQg7jr5lcG0G', 'ADMIN', 'OTHER'),
+('seller1@store.com', '$2b$12$NHkZS8Ov2YPU/Lxq8uyAIOurI21EOZ8d0pyH77R1ETQg7jr5lcG0G', 'CORPORATE', 'FEMALE'),
+('buyer1@random.com', '$2b$12$NHkZS8Ov2YPU/Lxq8uyAIOurI21EOZ8d0pyH77R1ETQg7jr5lcG0G', 'INDIVIDUAL', 'MALE'),
+('buyer2@random.com', '$2b$12$NHkZS8Ov2YPU/Lxq8uyAIOurI21EOZ8d0pyH77R1ETQg7jr5lcG0G', 'INDIVIDUAL', 'FEMALE');
 
 -- Insert Stores
 INSERT INTO stores (owner_id, name, status) VALUES

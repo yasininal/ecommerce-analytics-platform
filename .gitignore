@@ -1,0 +1,24 @@
+# Environments
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+venv/
+env/
+.venv/
+
+# IDEs / Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+*.log
+docker_build_output.log
+
+# Temporary
+fix_db.py

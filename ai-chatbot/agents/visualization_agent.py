@@ -1,5 +1,5 @@
 from agents.state import State
-from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 import os
@@ -19,7 +19,7 @@ visualization_decision_prompt = PromptTemplate.from_template(
 )
 
 def visualization_node(state: State) -> State:
-    decision_chain = visualization_decision_prompt | ChatOpenAI(model="gpt-4o-mini", temperature=0) | StrOutputParser()
+    decision_chain = visualization_decision_prompt | ChatGoogleGenerativeAI(model="gemini-pro", temperature=0, google_api_key=os.getenv("GOOGLE_API_KEY")) | StrOutputParser()
     data = state.get("query_result", [])
     
     # Needs actual data for visualization
@@ -28,7 +28,8 @@ def visualization_node(state: State) -> State:
         return state
         
     analysis_text = state.get("analysis_text", "")
-    data_str = str(data)[:1000]
+    capped_data = data[:100] if len(data) > 100 else data
+    data_str = str(capped_data)
     
     decision = decision_chain.invoke({
         "question": state["input_question"],
