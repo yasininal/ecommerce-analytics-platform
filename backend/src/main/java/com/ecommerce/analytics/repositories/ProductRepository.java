@@ -9,4 +9,6 @@ import java.util.List;
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
     List<Product> findByStoreId(Long storeId);
+
+    long countByStoreId(Long storeId);
 }
