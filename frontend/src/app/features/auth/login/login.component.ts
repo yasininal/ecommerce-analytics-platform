@@ -5,10 +5,10 @@ import { Router } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 
 @Component({
-    selector: 'app-login',
-    standalone: true,
-    imports: [CommonModule, ReactiveFormsModule],
-    template: `
+  selector: 'app-login',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule],
+  template: `
     <div class="login-page">
       <div class="login-bg"></div>
       <div class="login-card">
@@ -59,12 +59,12 @@ import { AuthService } from '../../../core/auth/auth.service';
         </form>
 
         <div class="login-hint">
-          <p>Demo: <code>admin@platform.com</code> / <code>password123</code></p>
+          <p>Demo: <code>admin&#64;platform.com</code> / <code>password123</code></p>
         </div>
       </div>
     </div>
   `,
-    styles: [`
+  styles: [`
     .login-page {
       min-height: 100vh;
       display: flex;
@@ -155,42 +155,42 @@ import { AuthService } from '../../../core/auth/auth.service';
   `]
 })
 export class LoginComponent {
-    loginForm: FormGroup;
-    error = '';
-    loading = false;
+  loginForm: FormGroup;
+  error = '';
+  loading = false;
 
-    constructor(
-        private fb: FormBuilder,
-        private authService: AuthService,
-        private router: Router
-    ) {
-        this.loginForm = this.fb.group({
-            email: ['', [Validators.required, Validators.email]],
-            password: ['', Validators.required]
-        });
-    }
+  constructor(
+    private fb: FormBuilder,
+    private authService: AuthService,
+    private router: Router
+  ) {
+    this.loginForm = this.fb.group({
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', Validators.required]
+    });
+  }
 
-    onSubmit() {
-        if (this.loginForm.valid) {
-            this.loading = true;
-            this.error = '';
-            this.authService.login(this.loginForm.value).subscribe({
-                next: (res) => {
-                    this.loading = false;
-                    localStorage.setItem('roles', JSON.stringify(res.roles));
-                    if (res.roles.includes('ROLE_ADMIN')) {
-                        this.router.navigate(['/admin/dashboard']);
-                    } else if (res.roles.includes('ROLE_CORPORATE')) {
-                        this.router.navigate(['/corporate/dashboard']);
-                    } else {
-                        this.router.navigate(['/individual/dashboard']);
-                    }
-                },
-                error: () => {
-                    this.loading = false;
-                    this.error = 'Giriş başarısız. Lütfen bilgilerinizi kontrol edin.';
-                }
-            });
+  onSubmit() {
+    if (this.loginForm.valid) {
+      this.loading = true;
+      this.error = '';
+      this.authService.login(this.loginForm.value).subscribe({
+        next: (res) => {
+          this.loading = false;
+          localStorage.setItem('roles', JSON.stringify(res.roles));
+          if (res.roles.includes('ROLE_ADMIN')) {
+            this.router.navigate(['/admin/dashboard']);
+          } else if (res.roles.includes('ROLE_CORPORATE')) {
+            this.router.navigate(['/corporate/dashboard']);
+          } else {
+            this.router.navigate(['/individual/dashboard']);
+          }
+        },
+        error: () => {
+          this.loading = false;
+          this.error = 'Giriş başarısız. Lütfen bilgilerinizi kontrol edin.';
         }
+      });
     }
+  }
 }
