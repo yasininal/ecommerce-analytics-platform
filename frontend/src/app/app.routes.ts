@@ -10,6 +10,7 @@ import { AnalyticsComponent } from './features/analytics/analytics.component';
 import { CustomersComponent } from './features/customers/customers.component';
 import { ShipmentsComponent } from './features/shipments/shipments.component';
 import { ReviewsComponent } from './features/reviews/reviews.component';
+import { AiAssistantComponent } from './features/ai-assistant/ai-assistant.component';
 import { authGuard } from './core/auth/auth.guard';
 
 export const routes: Routes = [
@@ -23,6 +24,7 @@ export const routes: Routes = [
         data: { role: 'ROLE_ADMIN' },
         children: [
             { path: 'dashboard', component: AdminDashboardComponent },
+            { path: 'ai-assistant', component: AiAssistantComponent },
             { path: 'analytics', component: AnalyticsComponent },
             { path: 'orders', component: OrdersComponent },
             { path: 'products', component: ProductsComponent },
@@ -41,6 +43,7 @@ export const routes: Routes = [
         data: { role: 'ROLE_CORPORATE' },
         children: [
             { path: 'dashboard', component: CorporateDashboardComponent },
+            { path: 'ai-assistant', component: AiAssistantComponent },
             { path: 'analytics', component: AnalyticsComponent },
             { path: 'orders', component: OrdersComponent },
             { path: 'products', component: ProductsComponent },
@@ -58,6 +61,7 @@ export const routes: Routes = [
         data: { role: 'ROLE_INDIVIDUAL' },
         children: [
             { path: 'dashboard', component: IndividualDashboardComponent },
+            { path: 'ai-assistant', component: AiAssistantComponent },
             { path: 'orders', component: OrdersComponent },
             { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
         ]
