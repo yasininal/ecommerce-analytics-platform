@@ -1,12 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { DecimalPipe } from '@angular/common';
 import { DashboardService, IndividualSummary } from '../dashboard.service';
 
 @Component({
   selector: 'app-individual-dashboard',
   standalone: true,
-  imports: [CommonModule, DecimalPipe],
+  imports: [CommonModule],
   template: `
     <div class="page-content">
       <div class="welcome-header">
@@ -31,7 +30,7 @@ import { DashboardService, IndividualSummary } from '../dashboard.service';
             <span class="kpi-icon" style="background:rgba(124,92,252,0.2)">💳</span>
             <span class="kpi-badge">Lifetime</span>
           </div>
-          <div class="kpi-value">${{ summary.totalSpent | number: '1.2-2' }}</div>
+          <div class="kpi-value">{{ totalSpentFormatted }}</div>
           <div class="kpi-label">Total Spent</div>
         </div>
         <div class="kpi-card">
@@ -93,11 +92,16 @@ export class IndividualDashboardComponent implements OnInit {
     { icon: '🛒', title: 'New Order Placed', sub: 'Smart Watch Series X — Nov 30, 2024', status: 'Pending', badgeClass: 'badge-warning', bg: 'rgba(255,181,71,0.15)' },
   ];
 
+  totalSpentFormatted = '';
+
   constructor(private dashboardService: DashboardService) { }
 
   ngOnInit(): void {
     this.dashboardService.getIndividualSummary().subscribe({
-      next: (data) => this.summary = data,
+      next: (data) => {
+        this.summary = data;
+        this.totalSpentFormatted = '$' + data.totalSpent.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      },
       error: (err) => console.error('Individual summary fetch error', err)
     });
   }
