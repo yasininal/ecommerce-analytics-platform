@@ -1,11 +1,13 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { DashboardService, ReviewData } from '../dashboard.service';
+import { AuthService } from '../../core/auth/auth.service';
 
 @Component({
-    selector: 'app-reviews',
-    standalone: true,
-    imports: [CommonModule],
-    template: `
+  selector: 'app-reviews',
+  standalone: true,
+  imports: [CommonModule],
+  template: `
     <div class="page-content">
       <div class="section-header">
         <div>
@@ -14,47 +16,59 @@ import { CommonModule } from '@angular/common';
         </div>
       </div>
 
-      <!-- Rating overview -->
-      <div class="rating-overview">
-        <div class="rating-big card">
-          <div class="big-score">4.8</div>
-          <div class="stars">★★★★★</div>
-          <p style="color:var(--text-muted);font-size:12px;margin-top:4px">3,421 total reviews</p>
-        </div>
-        <div class="card rating-bars" style="flex:1">
-          <div class="rating-bar-row" *ngFor="let r of ratings">
-            <span class="star-label">{{ r.star }}★</span>
-            <div class="bar-track">
-              <div class="bar-fill" [style.width.%]="r.pct" [style.background]="r.color"></div>
-            </div>
-            <span class="pct-label">{{ r.pct }}%</span>
-          </div>
-        </div>
+      <div *ngIf="userRole === 'ROLE_INDIVIDUAL'" style="padding:40px; text-align:center; color:var(--text-secondary)">
+         You do not have permission to view store reviews.
       </div>
 
-      <!-- Reviews list -->
-      <div class="reviews-list">
-        <div class="review-card card" *ngFor="let review of reviews">
-          <div class="review-header">
-            <div style="display:flex;align-items:center;gap:10px">
-              <div class="avatar-rev" [style.background]="review.color">{{ review.name.charAt(0) }}</div>
-              <div>
-                <p style="font-weight:600;color:var(--text-primary);font-size:13px">{{ review.name }}</p>
-                <p style="color:var(--text-muted);font-size:11px">{{ review.date }}</p>
-              </div>
-            </div>
-            <div class="stars-sm">{{ '★'.repeat(review.rating) }}{{ '☆'.repeat(5 - review.rating) }}</div>
+      <ng-container *ngIf="userRole !== 'ROLE_INDIVIDUAL'">
+        <div *ngIf="loading" style="padding:40px; text-align:center; color:var(--text-secondary)">Loading reviews...</div>
+
+        <!-- Rating overview -->
+        <div class="rating-overview" *ngIf="!loading && reviews.length > 0">
+          <div class="rating-big card">
+            <div class="big-score">{{ averageRating }}</div>
+            <div class="stars">{{ getStars(averageRating) }}</div>
+            <p style="color:var(--text-muted);font-size:12px;margin-top:4px">{{ reviews.length }} total reviews</p>
           </div>
-          <p class="review-text">{{ review.text }}</p>
-          <div class="review-product">
-            <span>📦</span>
-            <span>{{ review.product }}</span>
+          <div class="card rating-bars" style="flex:1">
+            <div class="rating-bar-row" *ngFor="let r of ratings">
+              <span class="star-label">{{ r.star }}★</span>
+              <div class="bar-track">
+                <div class="bar-fill" [style.width.%]="r.pct" [style.background]="r.color"></div>
+              </div>
+              <span class="pct-label">{{ r.pct }}%</span>
+            </div>
           </div>
         </div>
-      </div>
+
+        <!-- Reviews list -->
+        <div class="reviews-list" *ngIf="!loading && reviews.length > 0">
+          <div class="review-card card" *ngFor="let review of reviews">
+            <div class="review-header">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div class="avatar-rev" [style.background]="getGradient(review.id)">{{ review.userEmail.charAt(0).toUpperCase() }}</div>
+                <div>
+                  <p style="font-weight:600;color:var(--text-primary);font-size:13px">{{ review.userEmail }}</p>
+                  <p style="color:var(--text-muted);font-size:11px">{{ getRelativeTime() }}</p>
+                </div>
+              </div>
+              <div class="stars-sm">{{ '★'.repeat(review.starRating) }}{{ '☆'.repeat(5 - review.starRating) }}</div>
+            </div>
+            <p class="review-text">{{ review.sentiment }}</p>
+            <div class="review-product">
+              <span>📦</span>
+              <span>{{ review.productName }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="!loading && reviews.length === 0" style="padding:40px; text-align:center; color:var(--text-secondary)">
+           No reviews found.
+        </div>
+      </ng-container>
     </div>
   `,
-    styles: [`
+  styles: [`
     .page-content { padding: 28px 32px; }
     .rating-overview { display: flex; gap: 20px; margin-bottom: 24px; }
     .rating-big { padding: 28px; text-align: center; min-width: 180px; }
@@ -75,18 +89,85 @@ import { CommonModule } from '@angular/common';
     .review-product { font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; background: var(--bg-elevated); padding: 4px 10px; border-radius: 99px; width: fit-content; }
   `]
 })
-export class ReviewsComponent {
-    ratings = [
-        { star: 5, pct: 68, color: '#00c896' },
-        { star: 4, pct: 22, color: '#7c5cfc' },
-        { star: 3, pct: 6, color: '#ffb547' },
-        { star: 2, pct: 3, color: '#ff8c00' },
-        { star: 1, pct: 1, color: '#ff5c7a' },
+export class ReviewsComponent implements OnInit {
+  reviews: ReviewData[] = [];
+  ratings: any[] = [];
+  averageRating: string = '0.0';
+  loading = true;
+  userRole = '';
+
+  constructor(
+    private dashboardService: DashboardService,
+    private authService: AuthService
+  ) { }
+
+  ngOnInit() {
+    if (this.authService.hasRole('ROLE_ADMIN')) {
+      this.userRole = 'ROLE_ADMIN';
+      this.dashboardService.getReviews().subscribe({
+        next: (data) => { this.processReviews(data); this.loading = false; },
+        error: () => this.loading = false
+      });
+    } else if (this.authService.hasRole('ROLE_CORPORATE')) {
+      this.userRole = 'ROLE_CORPORATE';
+      this.dashboardService.getCorporateSummary().subscribe({
+        next: (summary) => {
+          if (summary.storeId) {
+            this.dashboardService.getReviewsByStore(summary.storeId).subscribe({
+              next: (data) => { this.processReviews(data); this.loading = false; },
+              error: () => this.loading = false
+            });
+          } else {
+            this.loading = false;
+          }
+        },
+        error: () => this.loading = false
+      });
+    } else {
+      this.userRole = 'ROLE_INDIVIDUAL';
+      this.loading = false;
+    }
+  }
+
+  processReviews(data: ReviewData[]) {
+    this.reviews = data;
+    if (data.length === 0) return;
+
+    let totalStars = 0;
+    const counts = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+
+    data.forEach(r => {
+      totalStars += r.starRating;
+      (counts as any)[r.starRating] = ((counts as any)[r.starRating] || 0) + 1;
+    });
+
+    this.averageRating = (totalStars / data.length).toFixed(1);
+
+    this.ratings = [
+      { star: 5, pct: Math.round((counts[5] / data.length) * 100), color: '#00c896' },
+      { star: 4, pct: Math.round((counts[4] / data.length) * 100), color: '#7c5cfc' },
+      { star: 3, pct: Math.round((counts[3] / data.length) * 100), color: '#ffb547' },
+      { star: 2, pct: Math.round((counts[2] / data.length) * 100), color: '#ff8c00' },
+      { star: 1, pct: Math.round((counts[1] / data.length) * 100), color: '#ff5c7a' },
     ];
-    reviews = [
-        { name: 'Sarah Miller', date: 'Dec 2, 2024', rating: 5, text: 'Absolutely love this product! The quality exceeded my expectations. Fast shipping and great packaging.', product: 'Wireless Headphones', color: 'linear-gradient(135deg,#7c5cfc,#9d80ff)' },
-        { name: 'James Wilson', date: 'Dec 1, 2024', rating: 4, text: 'Very good quality for the price. Would definitely recommend to friends and family.', product: 'Running Sneakers Pro', color: 'linear-gradient(135deg,#38bdf8,#7c5cfc)' },
-        { name: 'Emily Johnson', date: 'Nov 30, 2024', rating: 5, text: 'Perfect! Exactly what I was looking for. Will shop here again.', product: 'Smart Watch Series X', color: 'linear-gradient(135deg,#ffb547,#ff5c7a)' },
-        { name: 'Mike Brown', date: 'Nov 29, 2024', rating: 3, text: 'Decent product but shipping took a bit longer than expected. Overall satisfied.', product: 'Leather Handbag', color: 'linear-gradient(135deg,#00c896,#38bdf8)' },
+  }
+
+  getStars(rating: string): string {
+    const fullStars = Math.round(parseFloat(rating));
+    return '★'.repeat(fullStars) + '☆'.repeat(5 - fullStars);
+  }
+
+  getRelativeTime(): string {
+    return 'Recently'; // Simulating relative time for mocked lack-of-date in DB
+  }
+
+  getGradient(id: number): string {
+    const colors = [
+      'linear-gradient(135deg,#7c5cfc,#9d80ff)',
+      'linear-gradient(135deg,#38bdf8,#7c5cfc)',
+      'linear-gradient(135deg,#ffb547,#ff5c7a)',
+      'linear-gradient(135deg,#00c896,#38bdf8)'
     ];
+    return colors[id % colors.length];
+  }
 }

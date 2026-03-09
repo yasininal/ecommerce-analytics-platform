@@ -6,6 +6,7 @@ import lombok.Data;
 @Data
 @Builder
 public class CorporateSummaryDto {
+    private Long storeId;
     private String storeName;
     private long totalProducts;
     private long totalOrders;

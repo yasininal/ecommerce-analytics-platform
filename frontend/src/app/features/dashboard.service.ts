@@ -10,6 +10,7 @@ export interface AdminSummary {
 }
 
 export interface CorporateSummary {
+    storeId: number;
     storeName: string;
     totalProducts: number;
     totalOrders: number;
@@ -22,11 +23,55 @@ export interface IndividualSummary {
     totalSpent: number;
 }
 
+export interface OrderData {
+    id: number;
+    customerEmail: string;
+    storeName: string;
+    status: string;
+    grandTotal: number;
+}
+
+export interface ProductData {
+    id: number;
+    name: string;
+    sku: string;
+    unitPrice: number;
+    categoryName: string;
+    storeName: string;
+}
+
+export interface CustomerData {
+    id: number;
+    email: string;
+    gender: string;
+    age?: number;
+    city?: string;
+    membershipType: string;
+}
+
+export interface ShipmentData {
+    id: number;
+    orderId: number;
+    customerEmail: string;
+    warehouse: string;
+    mode: string;
+    status: string;
+}
+
+export interface ReviewData {
+    id: number;
+    userEmail: string;
+    productName: string;
+    starRating: number;
+    sentiment: string;
+}
+
 @Injectable({
     providedIn: 'root'
 })
 export class DashboardService {
     private apiUrl = '/api/dashboard';
+    private baseApiUrl = '/api';
 
     constructor(private http: HttpClient) { }
 
@@ -41,4 +86,25 @@ export class DashboardService {
     getIndividualSummary(): Observable<IndividualSummary> {
         return this.http.get<IndividualSummary>(`${this.apiUrl}/individual/summary`);
     }
+
+    // Orders
+    getOrders(): Observable<OrderData[]> { return this.http.get<OrderData[]>(`${this.baseApiUrl}/orders`); }
+    getOrdersByStore(storeId: number): Observable<OrderData[]> { return this.http.get<OrderData[]>(`${this.baseApiUrl}/orders/store/${storeId}`); }
+    getOrdersByUser(userId: number): Observable<OrderData[]> { return this.http.get<OrderData[]>(`${this.baseApiUrl}/orders/user/${userId}`); }
+
+    // Products
+    getProducts(): Observable<ProductData[]> { return this.http.get<ProductData[]>(`${this.baseApiUrl}/products`); }
+    getProductsByStore(storeId: number): Observable<ProductData[]> { return this.http.get<ProductData[]>(`${this.baseApiUrl}/products/store/${storeId}`); }
+
+    // Customers
+    getCustomers(): Observable<CustomerData[]> { return this.http.get<CustomerData[]>(`${this.baseApiUrl}/customers`); }
+
+    // Shipments
+    getShipments(): Observable<ShipmentData[]> { return this.http.get<ShipmentData[]>(`${this.baseApiUrl}/shipments`); }
+    getShipmentsByStore(storeId: number): Observable<ShipmentData[]> { return this.http.get<ShipmentData[]>(`${this.baseApiUrl}/shipments/store/${storeId}`); }
+    getShipmentsByUser(userId: number): Observable<ShipmentData[]> { return this.http.get<ShipmentData[]>(`${this.baseApiUrl}/shipments/user/${userId}`); }
+
+    // Reviews
+    getReviews(): Observable<ReviewData[]> { return this.http.get<ReviewData[]>(`${this.baseApiUrl}/reviews`); }
+    getReviewsByStore(storeId: number): Observable<ReviewData[]> { return this.http.get<ReviewData[]>(`${this.baseApiUrl}/reviews/store/${storeId}`); }
 }

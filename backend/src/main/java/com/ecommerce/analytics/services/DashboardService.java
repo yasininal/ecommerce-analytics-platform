@@ -51,6 +51,7 @@ public class DashboardService {
         Double revenue = orderRepository.sumGrandTotalByStoreId(mainStore.getId());
 
         return CorporateSummaryDto.builder()
+                .storeId(mainStore.getId())
                 .storeName(mainStore.getName())
                 .totalProducts(productCount)
                 .totalOrders(orderCount)

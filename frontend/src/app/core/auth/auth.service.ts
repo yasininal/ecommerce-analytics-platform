@@ -28,6 +28,9 @@ export class AuthService {
       tap(response => {
         if (response && response.token) {
           localStorage.setItem('token', response.token);
+          if (response.id) {
+            localStorage.setItem('userId', response.id.toString());
+          }
           this.loadUserFromToken();
         }
       })
@@ -36,11 +39,18 @@ export class AuthService {
 
   logout(): void {
     localStorage.removeItem('token');
+    localStorage.removeItem('roles');
+    localStorage.removeItem('userId');
     this.currentUserSubject.next(null);
   }
 
   get token(): string | null {
     return localStorage.getItem('token');
+  }
+
+  getUserId(): number | null {
+    const id = localStorage.getItem('userId');
+    return id ? parseInt(id, 10) : null;
   }
 
   public loadUserFromToken(): void {
