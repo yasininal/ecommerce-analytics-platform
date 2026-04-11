@@ -21,12 +21,16 @@ import { StoreService } from '../../core/services/store.service';
 
       <!-- Filters -->
       <div class="filters-bar">
-        <select class="dp-input">
-          <option>All Categories</option>
-          <option>Electronics</option>
-          <option>Smartphones</option>
-          <option>Laptops</option>
-          <option>Fashion</option>
+        <select class="dp-input" [(ngModel)]="categoryFilter" (change)="onSearch()">
+          <option value="ALL">All Categories</option>
+          <option value="Electronics">Electronics</option>
+          <option value="Smartphones">Smartphones</option>
+          <option value="Laptops">Laptops</option>
+          <option value="Fashion">Fashion</option>
+          <option value="Accessories">Accessories</option>
+          <option value="Clothing">Clothing</option>
+          <option value="Shoes">Shoes</option>
+          <option value="Bags">Bags</option>
         </select>
         <input class="dp-input" [(ngModel)]="searchTerm" (input)="onSearch()" placeholder="🔍  Search products..." style="flex:1; min-width:200px" />
       </div>
@@ -134,6 +138,7 @@ export class ProductsComponent implements OnInit {
   loading = true;
   userRole = '';
   searchTerm = '';
+  categoryFilter = 'ALL';
   
   showModal = false;
   saving = false;
@@ -186,10 +191,12 @@ export class ProductsComponent implements OnInit {
   }
 
   onSearch() {
-    this.filteredProducts = this.products.filter(p => 
-      p.name.toLowerCase().includes(this.searchTerm.toLowerCase()) || 
-      p.sku.toLowerCase().includes(this.searchTerm.toLowerCase())
-    );
+    const term = this.searchTerm.toLowerCase().trim();
+    this.filteredProducts = this.products.filter(p => {
+      const matchSearch = !term || p.name.toLowerCase().includes(term) || p.sku.toLowerCase().includes(term);
+      const matchCat = this.categoryFilter === 'ALL' || p.categoryName === this.categoryFilter;
+      return matchSearch && matchCat;
+    });
   }
 
   isFormValid() {

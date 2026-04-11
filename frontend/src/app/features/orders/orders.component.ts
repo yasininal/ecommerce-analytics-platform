@@ -19,12 +19,13 @@ import { AuthService } from '../../core/auth/auth.service';
 
       <!-- Filters -->
       <div class="filters-bar">
-        <select class="dp-input">
-          <option>All Status</option>
-          <option>Completed</option>
-          <option>Shipped</option>
-          <option>Pending</option>
-          <option>Cancelled</option>
+        <select class="dp-input" [(ngModel)]="statusFilter" (change)="onSearch()">
+          <option value="ALL">All Status</option>
+          <option value="DELIVERED">Delivered</option>
+          <option value="SHIPPED">Shipped</option>
+          <option value="PENDING">Pending</option>
+          <option value="CANCELLED">Cancelled</option>
+          <option value="PROCESSING">Processing</option>
         </select>
         <select class="dp-input">
           <option>All Time</option>
@@ -92,6 +93,7 @@ export class OrdersComponent implements OnInit {
   loading = true;
   userRole = '';
   searchTerm = '';
+  statusFilter = 'ALL';
 
   constructor(
     private dashboardService: DashboardService,
@@ -149,15 +151,16 @@ export class OrdersComponent implements OnInit {
 
   onSearch() {
     const term = this.searchTerm.toLowerCase().trim();
-    if (!term) {
-      this.filteredOrders = this.orders;
-      return;
-    }
-
-    this.filteredOrders = this.orders.filter(o => 
-      o.id.toString().includes(term) || 
-      o.customerEmail.toLowerCase().includes(term) ||
-      o.storeName?.toLowerCase().includes(term)
-    );
+    
+    this.filteredOrders = this.orders.filter(o => {
+      const matchSearch = !term || 
+        o.id.toString().includes(term) || 
+        o.customerEmail.toLowerCase().includes(term) ||
+        o.storeName?.toLowerCase().includes(term);
+        
+      const matchStatus = this.statusFilter === 'ALL' || o.status === this.statusFilter;
+      
+      return matchSearch && matchStatus;
+    });
   }
 }
