@@ -22,3 +22,11 @@ docker_build_output.log
 
 # Temporary
 fix_db.py
+
+# Build/Compiled folders
+backend/target/
+frontend/dist/
+frontend/node_modules/
+frontend/.angular/
+frontend/coverage/
+ai-chatbot/venv/

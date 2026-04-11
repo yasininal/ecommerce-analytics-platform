@@ -1,7 +1,6 @@
 package com.ecommerce.analytics.controllers;
 
 import com.ecommerce.analytics.controllers.dto.ReviewDto;
-import com.ecommerce.analytics.entities.Review;
 import com.ecommerce.analytics.repositories.ReviewRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

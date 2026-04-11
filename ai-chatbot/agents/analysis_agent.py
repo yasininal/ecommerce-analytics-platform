@@ -16,10 +16,11 @@ prompt = PromptTemplate.from_template(
 )
 
 def build_analysis_chain():
-    llm = ChatGoogleGenerativeAI(model="gemini-pro", temperature=0.2, google_api_key=os.getenv("GOOGLE_API_KEY"))
+    llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0.2, google_api_key=os.getenv("GOOGLE_API_KEY"))
     return prompt | llm | StrOutputParser()
 
-def analysis_node(state: State) -> State:
+async def analysis_node(state: State) -> State:
+
     data = state.get("query_result", [])
     
     # Provide simple string if empty
@@ -33,7 +34,7 @@ def analysis_node(state: State) -> State:
     data_str = str(capped_data)
         
     chain = build_analysis_chain()
-    analysis = chain.invoke({
+    analysis = await chain.ainvoke({
         "question": state["input_question"],
         "data": data_str
     })

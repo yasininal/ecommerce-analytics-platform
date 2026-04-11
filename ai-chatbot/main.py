@@ -7,6 +7,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+import nest_asyncio
+nest_asyncio.apply()
+
 app = FastAPI(title="E-Commerce AI Chatbot API")
 
 app.add_middleware(
@@ -34,6 +37,7 @@ def home():
 
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat_endpoint(request: ChatRequest):
+    print(f"Received message: {request.message}")
     initial_state = {
         "input_question": request.message,
         "is_valid_query": None,
@@ -47,10 +51,12 @@ async def chat_endpoint(request: ChatRequest):
     }
     
     try:
+        print("Invoking graph...")
         if not os.getenv("GOOGLE_API_KEY"):
             raise HTTPException(status_code=500, detail="GOOGLE_API_KEY environment variable not set")
             
-        final_state = graph.invoke(initial_state)
+        final_state = await graph.ainvoke(initial_state)
+        print("Graph execution completed.")
 
         # Check if rejected by guardrails or max retries SQL error
         if final_state.get("is_valid_query") is False:

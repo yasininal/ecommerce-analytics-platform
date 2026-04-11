@@ -5,15 +5,15 @@ from agents.state import State
 import os
 
 SCHEMA_INFO = """
-USERS (id, email, password_hash, role_type, gender)
-STORES (id, owner_id, name, status)
-CUSTOMER_PROFILES (id, user_id, age, city, membership_type)
-ORDERS (id, user_id, store_id, status, grand_total)
-ORDER_ITEMS (id, order_id, product_id, quantity, price)
-SHIPMENTS (id, order_id, warehouse, mode, status)
-PRODUCTS (id, store_id, category_id, sku, name, unit_price)
-REVIEWS (id, user_id, product_id, star_rating, sentiment)
-CATEGORIES (id, name, parent_id)
+users (id, email, password_hash, role_type, gender)
+stores (id, owner_id, name, status)
+customer_profiles (id, user_id, age, city, membership_type)
+orders (id, user_id, store_id, status, grand_total)
+order_items (id, order_id, product_id, quantity, price)
+shipments (id, order_id, warehouse, mode, status)
+products (id, store_id, category_id, sku, name, unit_price)
+reviews (id, user_id, product_id, star_rating, sentiment)
+categories (id, name, parent_id)
 """
 
 prompt = PromptTemplate.from_template(
@@ -30,16 +30,17 @@ prompt = PromptTemplate.from_template(
 )
 
 def build_sql_chain():
-    llm = ChatGoogleGenerativeAI(model="gemini-pro", temperature=0, google_api_key=os.getenv("GOOGLE_API_KEY"))
+    llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0, google_api_key=os.getenv("GOOGLE_API_KEY"))
     return prompt | llm | StrOutputParser()
 
-def sql_node(state: State) -> State:
+async def sql_node(state: State) -> State:
+    print("SQL node started")
     chain = build_sql_chain()
-    query = chain.invoke({
+    query = (await chain.ainvoke({
         "schema": SCHEMA_INFO,
         "question": state["input_question"],
         "error": state.get("error", "")
-    }).strip()
+    })).strip()
     
     # Clean possible markdown
     if query.startswith("```sql"):

@@ -16,12 +16,15 @@ prompt = PromptTemplate.from_template(
 )
 
 def build_guardrails_chain():
-    llm = ChatGoogleGenerativeAI(model="gemini-pro", temperature=0, google_api_key=os.getenv("GOOGLE_API_KEY"))
+    llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0, google_api_key=os.getenv("GOOGLE_API_KEY"))
     return prompt | llm | StrOutputParser()
 
-def guardrails_node(state: State) -> State:
+async def guardrails_node(state: State) -> State:
+    print("Guardrails node started")
     chain = build_guardrails_chain()
-    result = chain.invoke({"question": state["input_question"]}).strip().upper()
+    print("Invoking guardrails chain...")
+    result = (await chain.ainvoke({"question": state["input_question"]})).strip().upper()
+    print(f"Guardrails result: {result}")
     
     if "YES" in result:
         state["is_valid_query"] = True
