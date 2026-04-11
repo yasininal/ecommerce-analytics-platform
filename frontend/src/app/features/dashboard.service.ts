@@ -95,6 +95,9 @@ export class DashboardService {
     // Products
     getProducts(): Observable<ProductData[]> { return this.http.get<ProductData[]>(`${this.baseApiUrl}/products`); }
     getProductsByStore(storeId: number): Observable<ProductData[]> { return this.http.get<ProductData[]>(`${this.baseApiUrl}/products/store/${storeId}`); }
+    createProduct(product: Partial<ProductData>): Observable<ProductData> { return this.http.post<ProductData>(`${this.baseApiUrl}/products`, product); }
+    updateProduct(id: number, product: Partial<ProductData>): Observable<ProductData> { return this.http.put<ProductData>(`${this.baseApiUrl}/products/${id}`, product); }
+    deleteProduct(id: number): Observable<void> { return this.http.delete<void>(`${this.baseApiUrl}/products/${id}`); }
 
     // Customers
     getCustomers(): Observable<CustomerData[]> { return this.http.get<CustomerData[]>(`${this.baseApiUrl}/customers`); }

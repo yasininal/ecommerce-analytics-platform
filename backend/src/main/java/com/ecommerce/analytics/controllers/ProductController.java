@@ -16,18 +16,14 @@ import java.util.stream.Collectors;
 public class ProductController {
 
         private final ProductRepository productRepository;
+        private final com.ecommerce.analytics.repositories.StoreRepository storeRepository;
+        private final com.ecommerce.analytics.repositories.CategoryRepository categoryRepository;
 
         @GetMapping
         @PreAuthorize("hasRole('ADMIN')")
         public ResponseEntity<List<ProductDto>> getAllProducts() {
                 List<ProductDto> products = productRepository.findAll().stream()
-                                .map(p -> new ProductDto(
-                                                p.getId(),
-                                                p.getName(),
-                                                p.getSku(),
-                                                p.getUnitPrice().doubleValue(),
-                                                p.getCategory() != null ? p.getCategory().getName() : "Uncategorized",
-                                                p.getStore().getName()))
+                                .map(this::convertToDto)
                                 .collect(Collectors.toList());
                 return ResponseEntity.ok(products);
         }
@@ -36,14 +32,61 @@ public class ProductController {
         @PreAuthorize("hasRole('ADMIN') or hasRole('CORPORATE')")
         public ResponseEntity<List<ProductDto>> getProductsByStore(@PathVariable Long storeId) {
                 List<ProductDto> products = productRepository.findByStoreId(storeId).stream()
-                                .map(p -> new ProductDto(
-                                                p.getId(),
-                                                p.getName(),
-                                                p.getSku(),
-                                                p.getUnitPrice().doubleValue(),
-                                                p.getCategory() != null ? p.getCategory().getName() : "Uncategorized",
-                                                p.getStore().getName()))
+                                .map(this::convertToDto)
                                 .collect(Collectors.toList());
                 return ResponseEntity.ok(products);
+        }
+
+        @PostMapping
+        @PreAuthorize("hasRole('ADMIN') or hasRole('CORPORATE')")
+        public ResponseEntity<ProductDto> createProduct(@RequestBody ProductDto dto) {
+                com.ecommerce.analytics.entities.Product product = new com.ecommerce.analytics.entities.Product();
+                updateProductFromDto(product, dto);
+                product = productRepository.save(product);
+                return ResponseEntity.ok(convertToDto(product));
+        }
+
+        @PutMapping("/{id}")
+        @PreAuthorize("hasRole('ADMIN') or hasRole('CORPORATE')")
+        public ResponseEntity<ProductDto> updateProduct(@PathVariable Long id, @RequestBody ProductDto dto) {
+                com.ecommerce.analytics.entities.Product product = productRepository.findById(id)
+                                .orElseThrow(() -> new RuntimeException("Product not found"));
+                updateProductFromDto(product, dto);
+                product = productRepository.save(product);
+                return ResponseEntity.ok(convertToDto(product));
+        }
+
+        @DeleteMapping("/{id}")
+        @PreAuthorize("hasRole('ADMIN') or hasRole('CORPORATE')")
+        public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
+                productRepository.deleteById(id);
+                return ResponseEntity.ok().build();
+        }
+
+        private ProductDto convertToDto(com.ecommerce.analytics.entities.Product p) {
+                return ProductDto.builder()
+                                .id(p.getId())
+                                .name(p.getName())
+                                .sku(p.getSku())
+                                .unitPrice(p.getUnitPrice().doubleValue())
+                                .categoryName(p.getCategory() != null ? p.getCategory().getName() : "Uncategorized")
+                                .storeName(p.getStore().getName())
+                                .build();
+        }
+
+        private void updateProductFromDto(com.ecommerce.analytics.entities.Product p, ProductDto dto) {
+                p.setName(dto.getName());
+                p.setSku(dto.getSku());
+                p.setUnitPrice(java.math.BigDecimal.valueOf(dto.getUnitPrice()));
+                
+                if (dto.getCategoryName() != null) {
+                        p.setCategory(categoryRepository.findByName(dto.getCategoryName()).orElse(null));
+                }
+                
+                if (p.getStore() == null && dto.getStoreName() != null) {
+                    p.setStore(storeRepository.findAll().stream()
+                        .filter(s -> s.getName().equals(dto.getStoreName()))
+                        .findFirst().orElse(null));
+                }
         }
 }
