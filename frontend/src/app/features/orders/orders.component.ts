@@ -1,13 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { DashboardService, OrderData } from '../dashboard.service';
 import { AuthService } from '../../core/auth/auth.service';
 
 @Component({
-  // ... (geri kalanı config üzerinden güncelleniyor)
   selector: 'app-orders',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   template: `
     <div class="page-content">
       <div class="section-header">
@@ -32,14 +32,16 @@ import { AuthService } from '../../core/auth/auth.service';
           <option>This Week</option>
           <option>This Month</option>
         </select>
-        <input class="dp-input" placeholder="🔍  Search orders..." style="flex:1; min-width:200px" />
+        <input class="dp-input" placeholder="🔍  Search by Order ID or Customer..." 
+               [(ngModel)]="searchTerm" (input)="onSearch()"
+               style="flex:1; min-width:200px" />
       </div>
 
       <!-- Table -->
       <div class="card" style="padding:0; overflow:hidden; margin-top:20px">
         <div *ngIf="loading" style="padding:40px; text-align:center; color:var(--text-secondary)">Loading orders...</div>
         
-        <table class="dp-table" *ngIf="!loading && orders.length > 0">
+        <table class="dp-table" *ngIf="!loading && filteredOrders.length > 0">
           <thead>
             <tr>
               <th>ORDER ID</th>
@@ -50,7 +52,7 @@ import { AuthService } from '../../core/auth/auth.service';
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let order of orders">
+            <tr *ngFor="let order of filteredOrders">
               <td><span style="color:var(--accent-light);font-weight:600">#{{ order.id }}</span></td>
               <td>
                 <div style="display:flex;align-items:center;gap:10px">
@@ -72,7 +74,7 @@ import { AuthService } from '../../core/auth/auth.service';
           </tbody>
         </table>
         
-        <div *ngIf="!loading && orders.length === 0" style="padding:40px; text-align:center; color:var(--text-secondary)">
+        <div *ngIf="!loading && filteredOrders.length === 0" style="padding:40px; text-align:center; color:var(--text-secondary)">
            No orders found.
         </div>
       </div>
@@ -86,8 +88,10 @@ import { AuthService } from '../../core/auth/auth.service';
 })
 export class OrdersComponent implements OnInit {
   orders: OrderData[] = [];
+  filteredOrders: OrderData[] = [];
   loading = true;
   userRole = '';
+  searchTerm = '';
 
   constructor(
     private dashboardService: DashboardService,
@@ -100,7 +104,11 @@ export class OrdersComponent implements OnInit {
     if (this.authService.hasRole('ROLE_ADMIN')) {
       this.userRole = 'ROLE_ADMIN';
       this.dashboardService.getOrders().subscribe({
-        next: (data) => { this.orders = data; this.loading = false; },
+        next: (data) => { 
+          this.orders = data; 
+          this.filteredOrders = data;
+          this.loading = false; 
+        },
         error: () => this.loading = false
       });
     } else if (this.authService.hasRole('ROLE_CORPORATE')) {
@@ -109,7 +117,11 @@ export class OrdersComponent implements OnInit {
         next: (summary) => {
           if (summary.storeId) {
             this.dashboardService.getOrdersByStore(summary.storeId).subscribe({
-              next: (data) => { this.orders = data; this.loading = false; },
+              next: (data) => { 
+                this.orders = data; 
+                this.filteredOrders = data;
+                this.loading = false; 
+              },
               error: () => this.loading = false
             });
           } else {
@@ -122,12 +134,30 @@ export class OrdersComponent implements OnInit {
       this.userRole = 'ROLE_INDIVIDUAL';
       if (userId) {
         this.dashboardService.getOrdersByUser(userId).subscribe({
-          next: (data) => { this.orders = data; this.loading = false; },
+          next: (data) => { 
+            this.orders = data; 
+            this.filteredOrders = data;
+            this.loading = false; 
+          },
           error: () => this.loading = false
         });
       } else {
         this.loading = false;
       }
     }
+  }
+
+  onSearch() {
+    const term = this.searchTerm.toLowerCase().trim();
+    if (!term) {
+      this.filteredOrders = this.orders;
+      return;
+    }
+
+    this.filteredOrders = this.orders.filter(o => 
+      o.id.toString().includes(term) || 
+      o.customerEmail.toLowerCase().includes(term) ||
+      o.storeName?.toLowerCase().includes(term)
+    );
   }
 }

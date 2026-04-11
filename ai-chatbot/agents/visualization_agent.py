@@ -21,7 +21,7 @@ visualization_decision_prompt = PromptTemplate.from_template(
 async def visualization_node(state: State) -> State:
 
     def build_viz_chain():
-        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0, google_api_key=os.getenv("GOOGLE_API_KEY"))
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0, google_api_key=os.getenv("GOOGLE_API_KEY"))
         return visualization_decision_prompt | llm | StrOutputParser()
     
     decision_chain = build_viz_chain()
