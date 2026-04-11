@@ -15,7 +15,6 @@ import { AuthService } from '../../core/auth/auth.service';
           <h1>Orders Management 🛒</h1>
           <p>Track and manage all orders</p>
         </div>
-        <button class="btn btn-primary" *ngIf="userRole !== 'ROLE_INDIVIDUAL'">+ New Order</button>
       </div>
 
       <!-- Filters -->

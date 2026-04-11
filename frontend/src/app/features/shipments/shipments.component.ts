@@ -14,7 +14,6 @@ import { AuthService } from '../../core/auth/auth.service';
           <h1>Shipments Tracking 🚚</h1>
           <p>Monitor all shipments in real-time</p>
         </div>
-        <button class="btn btn-primary" *ngIf="userRole !== 'ROLE_INDIVIDUAL'">+ Create Shipment</button>
       </div>
 
       <div class="kpi-grid" *ngIf="userRole === 'ROLE_ADMIN'">
