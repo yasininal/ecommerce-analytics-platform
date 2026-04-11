@@ -284,6 +284,7 @@ export class LayoutComponent {
                 { label: 'Products', icon: '📦', route: '/corporate/products' },
             ];
             this.mgmtNav = [
+                { label: 'Store Settings', icon: '⚙️', route: '/corporate/settings' },
                 { label: 'Shipments', icon: '🚚', route: '/corporate/shipments' },
                 { label: 'Reviews', icon: '⭐', route: '/corporate/reviews' },
             ];

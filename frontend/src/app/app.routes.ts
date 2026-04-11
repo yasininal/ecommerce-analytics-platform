@@ -11,6 +11,7 @@ import { CustomersComponent } from './features/customers/customers.component';
 import { ShipmentsComponent } from './features/shipments/shipments.component';
 import { ReviewsComponent } from './features/reviews/reviews.component';
 import { AiAssistantComponent } from './features/ai-assistant/ai-assistant.component';
+import { SettingsComponent } from './features/settings/settings.component';
 import { authGuard } from './core/auth/auth.guard';
 
 export const routes: Routes = [
@@ -31,6 +32,7 @@ export const routes: Routes = [
             { path: 'customers', component: CustomersComponent },
             { path: 'shipments', component: ShipmentsComponent },
             { path: 'reviews', component: ReviewsComponent },
+            { path: 'settings', component: SettingsComponent },
             { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
         ]
     },
@@ -49,6 +51,7 @@ export const routes: Routes = [
             { path: 'products', component: ProductsComponent },
             { path: 'shipments', component: ShipmentsComponent },
             { path: 'reviews', component: ReviewsComponent },
+            { path: 'settings', component: SettingsComponent },
             { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
         ]
     },
