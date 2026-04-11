@@ -44,7 +44,7 @@ import { AuthService } from '../../core/auth/auth.service';
             <tr>
               <th>ORDER ID</th>
               <th>CUSTOMER</th>
-              <th>STORE</th>
+              <th *ngIf="userRole === 'ROLE_ADMIN'">STORE</th>
               <th>TOTAL</th>
               <th>STATUS</th>
             </tr>
@@ -58,7 +58,7 @@ import { AuthService } from '../../core/auth/auth.service';
                   <span style="color:var(--text-primary);font-weight:500">{{ order.customerEmail }}</span>
                 </div>
               </td>
-              <td>{{ order.storeName }}</td>
+              <td *ngIf="userRole === 'ROLE_ADMIN'">{{ order.storeName }}</td>
               <td style="color:var(--text-primary);font-weight:600">\${{ order.grandTotal | number:'1.2-2' }}</td>
               <td>
                 <span class="badge" [ngClass]="{

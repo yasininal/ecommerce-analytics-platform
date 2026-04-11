@@ -35,7 +35,7 @@ import { AuthService } from '../../core/auth/auth.service';
               <th>SHIPMENT ID</th>
               <th>ORDER ID</th>
               <th>CUSTOMER</th>
-              <th>WAREHOUSE</th>
+              <th *ngIf="userRole === 'ROLE_ADMIN'">WAREHOUSE</th>
               <th>MODE</th>
               <th>STATUS</th>
             </tr>
@@ -45,7 +45,7 @@ import { AuthService } from '../../core/auth/auth.service';
               <td><span style="color:var(--accent-light);font-weight:600">SHP-{{ s.id }}</span></td>
               <td style="color:var(--text-primary)">#{{ s.orderId }}</td>
               <td>{{ s.customerEmail }}</td>
-              <td>{{ s.warehouse }}</td>
+              <td *ngIf="userRole === 'ROLE_ADMIN'">{{ s.warehouse }}</td>
               <td>{{ s.mode }}</td>
               <td>
                 <span class="badge" [ngClass]="{

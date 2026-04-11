@@ -20,7 +20,11 @@ visualization_decision_prompt = PromptTemplate.from_template(
 
 async def visualization_node(state: State) -> State:
 
-    decision_chain = visualization_decision_prompt | ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0, google_api_key=os.getenv("GOOGLE_API_KEY")) | StrOutputParser()
+    def build_viz_chain():
+        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0, google_api_key=os.getenv("GOOGLE_API_KEY"))
+        return visualization_decision_prompt | llm | StrOutputParser()
+    
+    decision_chain = build_viz_chain()
     data = state.get("query_result", [])
     
     # Needs actual data for visualization

@@ -1,5 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { DashboardService } from '../dashboard.service';
+import { AuthService } from '../../core/auth/auth.service';
 
 @Component({
     selector: 'app-analytics',
@@ -12,7 +14,7 @@ import { CommonModule } from '@angular/common';
           <h1>Analytics Dashboard 📈</h1>
           <p>Deep insights into your store performance</p>
         </div>
-        <button class="btn btn-ghost">↓ Export Report</button>
+        <button class="btn btn-ghost" (click)="exportReport()">↓ Export Report</button>
       </div>
 
       <!-- KPI row -->
@@ -26,9 +28,11 @@ import { CommonModule } from '@angular/common';
           <div class="kpi-label">{{ kpi.label }}</div>
         </div>
       </div>
+      
+      <div *ngIf="loading" class="dp-loading"><div class="spinner"></div> Calculating insights...</div>
 
       <!-- Charts row -->
-      <div class="charts-row">
+      <div class="charts-row" *ngIf="!loading">
         <!-- Sales Trends -->
         <div class="card chart-card" style="flex:2">
           <div style="margin-bottom:16px">
@@ -99,18 +103,44 @@ import { CommonModule } from '@angular/common';
     .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
   `]
 })
-export class AnalyticsComponent {
+export class AnalyticsComponent implements OnInit {
+    loading = true;
     months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    kpis = [
-        { icon: '💰', label: 'Monthly Revenue', value: '$127,540', trend: '+16.2%', trendUp: true, bg: 'rgba(124,92,252,0.2)' },
-        { icon: '🔄', label: 'Conversion Rate', value: '3.2%', trend: '+0.4%', trendUp: true, bg: 'rgba(56,189,248,0.2)' },
-        { icon: '🛒', label: 'Avg Order Value', value: '$68.50', trend: '+7.5%', trendUp: true, bg: 'rgba(0,200,150,0.2)' },
-        { icon: '↩️', label: 'Return Rate', value: '4.8%', trend: '-3.5%', trendUp: false, bg: 'rgba(255,92,122,0.2)' },
-    ];
+    kpis: any[] = [];
     categories = [
         { name: 'Fashion', color: '#7c5cfc', pct: 40 },
         { name: 'Electronics', color: '#38bdf8', pct: 20 },
         { name: 'Home', color: '#00c896', pct: 16 },
         { name: 'Beauty', color: '#ff5c7a', pct: 24 },
     ];
+
+    constructor(private dashboardService: DashboardService, private authService: AuthService) {}
+
+    ngOnInit() {
+        if (this.authService.hasRole('ROLE_ADMIN')) {
+            this.dashboardService.getAdminSummary().subscribe({
+                next: (data) => this.processData(data.totalRevenue, data.totalOrders),
+                error: () => this.loading = false
+            });
+        } else {
+            this.dashboardService.getCorporateSummary().subscribe({
+                next: (data) => this.processData(data.totalRevenue, data.totalOrders),
+                error: () => this.loading = false
+            });
+        }
+    }
+
+    processData(revenue: number, orders: number) {
+        this.kpis = [
+            { icon: '💰', label: 'Total Revenue', value: '$' + revenue.toLocaleString(), trend: '+12.5%', trendUp: true, bg: 'rgba(124,92,252,0.2)' },
+            { icon: '🔄', label: 'Total Orders', value: orders.toLocaleString(), trend: '+0.4%', trendUp: true, bg: 'rgba(56,189,248,0.2)' },
+            { icon: '🛒', label: 'Avg Order Value', value: '$' + (revenue / (orders || 1)).toFixed(2), trend: '+7.5%', trendUp: true, bg: 'rgba(0,200,150,0.2)' },
+            { icon: '↩️', label: 'Performance', value: 'High', trend: 'Stable', trendUp: true, bg: 'rgba(255,92,122,0.2)' },
+        ];
+        this.loading = false;
+    }
+
+    exportReport() {
+        alert('Report export started... Preparing PDF.');
+    }
 }

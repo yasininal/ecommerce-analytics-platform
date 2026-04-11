@@ -19,7 +19,6 @@ import { DashboardService, CorporateSummary } from '../dashboard.service';
         <div class="kpi-card" *ngFor="let kpi of kpis">
           <div class="kpi-top">
             <span class="kpi-icon" [style.background]="kpi.iconBg">{{ kpi.icon }}</span>
-            <span class="kpi-trend-up">↑ +New</span>
           </div>
           <div class="kpi-value">{{ kpi.value }}</div>
           <div class="kpi-label">{{ kpi.label }}</div>

@@ -16,7 +16,7 @@ prompt = PromptTemplate.from_template(
 )
 
 def build_analysis_chain():
-    llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0.2, google_api_key=os.getenv("GOOGLE_API_KEY"))
+    llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0.3, google_api_key=os.getenv("GOOGLE_API_KEY"))
     return prompt | llm | StrOutputParser()
 
 async def analysis_node(state: State) -> State:

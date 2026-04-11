@@ -264,7 +264,7 @@ export class LayoutComponent {
         if (roles.includes('ROLE_ADMIN')) {
             this.mainNav = [
                 { label: 'Dashboard', icon: '🏠', route: '/admin/dashboard' },
-                { label: 'AI Assistant', icon: '🤖', route: '/admin/ai-assistant', badge: 'New' },
+                { label: 'AI Assistant', icon: '🤖', route: '/admin/ai-assistant' },
                 { label: 'Analytics', icon: '📈', route: '/admin/analytics' },
                 { label: 'Orders', icon: '🛒', route: '/admin/orders' },
                 { label: 'Products', icon: '📦', route: '/admin/products' },
@@ -278,7 +278,7 @@ export class LayoutComponent {
         } else if (roles.includes('ROLE_CORPORATE')) {
             this.mainNav = [
                 { label: 'Dashboard', icon: '🏠', route: '/corporate/dashboard' },
-                { label: 'AI Assistant', icon: '🤖', route: '/corporate/ai-assistant', badge: 'New' },
+                { label: 'AI Assistant', icon: '🤖', route: '/corporate/ai-assistant' },
                 { label: 'Analytics', icon: '📈', route: '/corporate/analytics' },
                 { label: 'Orders', icon: '🛒', route: '/corporate/orders' },
                 { label: 'Products', icon: '📦', route: '/corporate/products' },
@@ -291,7 +291,7 @@ export class LayoutComponent {
         } else {
             this.mainNav = [
                 { label: 'Dashboard', icon: '🏠', route: '/individual/dashboard' },
-                { label: 'AI Assistant', icon: '🤖', route: '/individual/ai-assistant', badge: 'New' },
+                { label: 'AI Assistant', icon: '🤖', route: '/individual/ai-assistant' },
                 { label: 'My Orders', icon: '🛒', route: '/individual/orders' },
             ];
             this.mgmtNav = [];

@@ -48,7 +48,7 @@ import { StoreService } from '../../core/services/store.service';
               </div>
             </div>
             <div style="font-size: 11px; color: var(--text-muted); margin-top: 8px;">
-               SKU: {{ product.sku }} | Store: {{ product.storeName }}
+               SKU: {{ product.sku }} <span *ngIf="userRole === 'ROLE_ADMIN'">| Store: {{ product.storeName }}</span>
             </div>
           </div>
         </div>
