@@ -101,6 +101,7 @@ export class DashboardService {
 
     // Customers
     getCustomers(): Observable<CustomerData[]> { return this.http.get<CustomerData[]>(`${this.baseApiUrl}/customers`); }
+    deleteCustomer(id: number): Observable<void> { return this.http.delete<void>(`${this.baseApiUrl}/customers/${id}`); }
 
     // Shipments
     getShipments(): Observable<ShipmentData[]> { return this.http.get<ShipmentData[]>(`${this.baseApiUrl}/shipments`); }
@@ -110,4 +111,5 @@ export class DashboardService {
     // Reviews
     getReviews(): Observable<ReviewData[]> { return this.http.get<ReviewData[]>(`${this.baseApiUrl}/reviews`); }
     getReviewsByStore(storeId: number): Observable<ReviewData[]> { return this.http.get<ReviewData[]>(`${this.baseApiUrl}/reviews/store/${storeId}`); }
+    deleteReview(id: number): Observable<void> { return this.http.delete<void>(`${this.baseApiUrl}/reviews/${id}`); }
 }

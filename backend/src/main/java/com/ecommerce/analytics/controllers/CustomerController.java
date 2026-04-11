@@ -40,4 +40,11 @@ public class CustomerController {
                 .collect(Collectors.toList());
         return ResponseEntity.ok(customers);
     }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> deleteCustomer(@PathVariable Long id) {
+        userRepository.deleteById(id);
+        return ResponseEntity.noContent().build();
+    }
 }

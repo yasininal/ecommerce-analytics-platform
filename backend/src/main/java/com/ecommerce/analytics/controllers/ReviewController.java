@@ -44,4 +44,11 @@ public class ReviewController {
                                 .collect(Collectors.toList());
                 return ResponseEntity.ok(reviews);
         }
+
+        @DeleteMapping("/{id}")
+        @PreAuthorize("hasRole('ADMIN')")
+        public ResponseEntity<Void> deleteReview(@PathVariable Long id) {
+                reviewRepository.deleteById(id);
+                return ResponseEntity.noContent().build();
+        }
 }

@@ -33,6 +33,7 @@ import { AuthService } from '../../core/auth/auth.service';
                 <th>GENDER</th>
                 <th>AGE</th>
                 <th>STATUS</th>
+                <th style="text-align:right">ACTIONS</th>
               </tr>
             </thead>
             <tbody>
@@ -52,6 +53,9 @@ import { AuthService } from '../../core/auth/auth.service';
                 <td style="color:var(--text-secondary)">{{ c.gender }}</td>
                 <td>{{ c.age ? c.age : 'N/A' }}</td>
                 <td><span class="badge badge-success">Active</span></td>
+                <td style="text-align:right">
+                  <button class="btn btn-ghost" style="color:var(--danger)" (click)="deleteCust(c.id)">Delete</button>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -89,6 +93,17 @@ export class CustomersComponent implements OnInit {
     } else {
       this.userRole = this.authService.hasRole('ROLE_CORPORATE') ? 'ROLE_CORPORATE' : 'ROLE_INDIVIDUAL';
       this.loading = false;
+    }
+  }
+
+  deleteCust(id: number) {
+    if (confirm('Are you sure you want to delete this customer?')) {
+      this.dashboardService.deleteCustomer(id).subscribe({
+        next: () => {
+          this.customers = this.customers.filter(c => c.id !== id);
+        },
+        error: (err) => alert('Failed to delete customer.')
+      });
     }
   }
 

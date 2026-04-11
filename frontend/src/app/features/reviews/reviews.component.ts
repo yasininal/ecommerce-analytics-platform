@@ -55,9 +55,12 @@ import { AuthService } from '../../core/auth/auth.service';
               <div class="stars-sm">{{ '★'.repeat(review.starRating) }}{{ '☆'.repeat(5 - review.starRating) }}</div>
             </div>
             <p class="review-text">{{ review.sentiment }}</p>
-            <div class="review-product">
-              <span>📦</span>
-              <span>{{ review.productName }}</span>
+            <div style="display:flex; justify-content:space-between; align-items:center">
+                <div class="review-product">
+                <span>📦</span>
+                <span>{{ review.productName }}</span>
+                </div>
+                <button *ngIf="userRole === 'ROLE_ADMIN'" class="btn btn-ghost" style="color:var(--danger); font-size:11px" (click)="deleteRev(review.id)">Delete</button>
             </div>
           </div>
         </div>
@@ -126,6 +129,18 @@ export class ReviewsComponent implements OnInit {
     } else {
       this.userRole = 'ROLE_INDIVIDUAL';
       this.loading = false;
+    }
+  }
+
+  deleteRev(id: number) {
+    if (confirm('Are you sure you want to delete this review?')) {
+      this.dashboardService.deleteReview(id).subscribe({
+        next: () => {
+          this.reviews = this.reviews.filter(r => r.id !== id);
+          this.processReviews(this.reviews);
+        },
+        error: () => alert('Failed to delete review.')
+      });
     }
   }
 
