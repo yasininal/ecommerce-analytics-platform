@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DashboardService, ProductData } from '../dashboard.service';
 import { AuthService } from '../../core/auth/auth.service';
+import { StoreService } from '../../core/services/store.service';
 
 @Component({
   selector: 'app-products',
@@ -65,11 +66,11 @@ import { AuthService } from '../../core/auth/auth.service';
         <div class="form-grid">
           <div class="form-group">
             <label>Name</label>
-            <input type="text" class="dp-input" [(ngModel)]="formProduct.name" />
+            <input type="text" class="dp-input" [(ngModel)]="formProduct.name" placeholder="Product Name" />
           </div>
           <div class="form-group">
             <label>SKU</label>
-            <input type="text" class="dp-input" [(ngModel)]="formProduct.sku" />
+            <input type="text" class="dp-input" [(ngModel)]="formProduct.sku" placeholder="Unique SKU" />
           </div>
           <div class="form-group">
             <label>Price</label>
@@ -88,10 +89,19 @@ import { AuthService } from '../../core/auth/auth.service';
               <option value="Bags">Bags</option>
             </select>
           </div>
+          <!-- Store Selection for Admin -->
+          <div class="form-group" *ngIf="userRole === 'ROLE_ADMIN'">
+            <label>Store</label>
+            <select class="dp-input" [(ngModel)]="formProduct.storeName">
+              <option *ngFor="let s of allStores" [value]="s.name">{{ s.name }}</option>
+            </select>
+          </div>
         </div>
         <div class="modal-actions">
           <button class="btn btn-ghost" (click)="closeModal()">Cancel</button>
-          <button class="btn btn-primary" (click)="saveProduct()">Save Changes</button>
+          <button class="btn btn-primary" [disabled]="!isFormValid()" (click)="saveProduct()">
+            {{ saving ? 'Saving...' : 'Save Changes' }}
+          </button>
         </div>
       </div>
     </div>
@@ -126,17 +136,27 @@ export class ProductsComponent implements OnInit {
   searchTerm = '';
   
   showModal = false;
+  saving = false;
   editingProduct: ProductData | null = null;
   formProduct: Partial<ProductData> = {};
+  
+  corporateStoreName = '';
+  allStores: any[] = [];
 
   constructor(
     private dashboardService: DashboardService,
-    private authService: AuthService
+    private authService: AuthService,
+    private storeService: StoreService
   ) { }
 
   ngOnInit() {
     this.userRole = this.authService.hasRole('ROLE_ADMIN') ? 'ROLE_ADMIN' : 
                    this.authService.hasRole('ROLE_CORPORATE') ? 'ROLE_CORPORATE' : 'ROLE_INDIVIDUAL';
+    
+    if (this.userRole === 'ROLE_ADMIN') {
+        this.storeService.getAllStores().subscribe(stores => this.allStores = stores);
+    }
+    
     this.refresh();
   }
 
@@ -150,6 +170,7 @@ export class ProductsComponent implements OnInit {
     } else if (this.userRole === 'ROLE_CORPORATE') {
       this.dashboardService.getCorporateSummary().subscribe({
         next: (summary) => {
+          this.corporateStoreName = summary.storeName;
           if (summary.storeId) {
             this.dashboardService.getProductsByStore(summary.storeId).subscribe({
               next: (data) => { this.products = data; this.onSearch(); this.loading = false; },
@@ -171,9 +192,14 @@ export class ProductsComponent implements OnInit {
     );
   }
 
+  isFormValid() {
+      return this.formProduct.name && this.formProduct.sku && (this.formProduct.unitPrice !== undefined) && 
+             (this.userRole === 'ROLE_CORPORATE' || this.formProduct.storeName);
+  }
+
   openAddModal() {
     this.editingProduct = null;
-    this.formProduct = { name: '', sku: '', unitPrice: 0, categoryName: 'Electronics' };
+    this.formProduct = { name: '', sku: '', unitPrice: 0, categoryName: 'Electronics', storeName: this.corporateStoreName };
     this.showModal = true;
   }
 
@@ -185,22 +211,28 @@ export class ProductsComponent implements OnInit {
 
   closeModal() {
     this.showModal = false;
+    this.saving = false;
   }
 
   saveProduct() {
+      if (!this.isFormValid()) return;
+      this.saving = true;
+
       if (this.editingProduct?.id) {
-          this.dashboardService.updateProduct(this.editingProduct.id, this.formProduct).subscribe(() => {
-              this.refresh();
-              this.closeModal();
+          this.dashboardService.updateProduct(this.editingProduct.id, this.formProduct).subscribe({
+              next: () => {
+                  this.refresh();
+                  this.closeModal();
+              },
+              error: () => this.saving = false
           });
       } else {
-          // For adding, we need a store name. If corporate, use their storeName from existing products
-          if (this.userRole === 'ROLE_CORPORATE' && this.products.length > 0) {
-              this.formProduct.storeName = this.products[0].storeName;
-          }
-          this.dashboardService.createProduct(this.formProduct).subscribe(() => {
-              this.refresh();
-              this.closeModal();
+          this.dashboardService.createProduct(this.formProduct).subscribe({
+              next: () => {
+                  this.refresh();
+                  this.closeModal();
+              },
+              error: () => this.saving = false
           });
       }
   }
