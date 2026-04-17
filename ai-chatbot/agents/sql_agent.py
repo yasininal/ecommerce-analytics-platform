@@ -18,30 +18,35 @@ categories (id, name, parent_id)
 
 prompt = PromptTemplate.from_template(
     """You are a MySQL expert for an E-Commerce Analytics Platform.
-    Write ONLY a valid MySQL query to answer the given question based on this schema:
+    Available database schema:
     {schema}
     
-    If there is an error from a previous attempt, here it is (Empty if no error): {error}
+    If the user's question is NOT related to e-commerce, sales, database metrics, or the schema above, respond exactly with "IRRELEVANT".
+    Otherwise, write ONLY a valid MySQL query to answer the question.
     
-    Remember: Return ONLY the SQL string, nothing else. No markdown formatting like ```sql.
+    Return ONLY the SQL string or "IRRELEVANT". No markdown formatting.
     
     Question: {question}
     """
 )
 
 def build_sql_chain():
-    llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0, google_api_key=os.getenv("GOOGLE_API_KEY"))
+    llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0, google_api_key=os.getenv("GOOGLE_API_KEY"))
     return prompt | llm | StrOutputParser()
 
 async def sql_node(state: State) -> State:
-    print("SQL node started")
     chain = build_sql_chain()
     query = (await chain.ainvoke({
         "schema": SCHEMA_INFO,
-        "question": state["input_question"],
-        "error": state.get("error", "")
+        "question": state["input_question"]
     })).strip()
     
+    if "IRRELEVANT" in query.upper():
+        state["is_valid_query"] = False
+        state["error"] = "I can only answer questions related to our E-Commerce Analytics Platform."
+        state["sql_query"] = None
+        return state
+
     # Clean possible markdown
     if query.startswith("```sql"):
         query = query.replace("```sql", "").strip()
@@ -49,5 +54,6 @@ async def sql_node(state: State) -> State:
         query = query[:-3].strip()
         
     state["sql_query"] = query
-    state["error"] = None # Reset error if we are generating new SQL
+    state["is_valid_query"] = True
+    state["error"] = None
     return state
