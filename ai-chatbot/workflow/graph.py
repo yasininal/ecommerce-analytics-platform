@@ -5,54 +5,81 @@ from agents.sql_agent import sql_node
 from agents.run_sql_node import run_sql_node
 from agents.analysis_agent import analysis_node
 from agents.visualization_agent import visualization_node
+from agents.error_agent import error_node
 
-def sql_check_router(state: State):
-    """Router to check if the question was relevant according to SQL Agent."""
+def guardrails_router(state: State):
+    """Router to check if the question passed guardrails."""
     if state.get("is_valid_query") is False:
         return "end_process"
-    return "run_sql"
+    return "sql_agent"
 
 def sql_execution_router(state: State):
     """Router to route to error loop or to analysis."""
     if state.get("error") and state.get("retry_count", 0) < 3:
-        return "sql_agent"
+        return "error_agent"
     elif state.get("error"):
         return "end_process"
         
     return "analysis_agent"
 
+def analysis_router(state: State):
+    """Router to check if visualization is needed."""
+    if state.get("needs_graph"):
+        return "visualization_agent"
+    return "end_process"
+
 def build_workflow():
     workflow = StateGraph(State)
 
+    # Add all nodes
+    workflow.add_node("guardrails_agent", guardrails_node)
     workflow.add_node("sql_agent", sql_node)
     workflow.add_node("run_sql", run_sql_node)
+    workflow.add_node("error_agent", error_node)
     workflow.add_node("analysis_agent", analysis_node)
+    workflow.add_node("visualization_agent", visualization_node)
 
-    # Entry point is now SQL Agent directly (Saves 1 request)
-    workflow.set_entry_point("sql_agent")
+    # Flow starts at guardrails
+    workflow.set_entry_point("guardrails_agent")
 
-    # Check if SQL agent found the question relevant
+    # Guardrails checks
     workflow.add_conditional_edges(
-        "sql_agent",
-        sql_check_router,
+        "guardrails_agent",
+        guardrails_router,
         {
-            "run_sql": "run_sql",
+            "sql_agent": "sql_agent",
             "end_process": END
         }
     )
 
-    # Run SQL Router
+    # SQL generation to execution
+    workflow.add_edge("sql_agent", "run_sql")
+
+    # Run SQL to Error check or Analysis
     workflow.add_conditional_edges(
         "run_sql",
         sql_execution_router,
         {
-            "sql_agent": "sql_agent",
+            "error_agent": "error_agent",
             "analysis_agent": "analysis_agent",
             "end_process": END
         }
     )
 
-    # Analysis now directly leads to END (Saves 1 more request)
-    workflow.add_edge("analysis_agent", END)
+    # Error recovery loops back to run_sql
+    workflow.add_edge("error_agent", "run_sql")
+
+    # Analysis to Visualization check
+    workflow.add_conditional_edges(
+        "analysis_agent",
+        analysis_router,
+        {
+            "visualization_agent": "visualization_agent",
+            "end_process": END
+        }
+    )
+
+    # Visualization ends
+    workflow.add_edge("visualization_agent", END)
 
     return workflow.compile()

@@ -44,11 +44,11 @@ async def analysis_node(state: State) -> State:
         state["analysis_text"] = res.get("answer", "I Analyzed the data.")
         state["final_output"] = state["analysis_text"]
         
-        # Grafik kararı artık burada veriliyor (1 istek tasarrufu)
+        # Set graph routing flag
         if res.get("needs_chart") and len(data) > 1:
-            state["visualization_code"] = json.dumps(data)
+            state["needs_graph"] = True
         else:
-            state["visualization_code"] = None
+            state["needs_graph"] = False
     except Exception as e:
         state["analysis_text"] = "I analyzed the data but could not format it correctly."
         state["final_output"] = state["analysis_text"]

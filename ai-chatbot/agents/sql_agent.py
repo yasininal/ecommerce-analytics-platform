@@ -21,10 +21,8 @@ prompt = PromptTemplate.from_template(
     Available database schema:
     {schema}
     
-    If the user's question is NOT related to e-commerce, sales, database metrics, or the schema above, respond exactly with "IRRELEVANT".
-    Otherwise, write ONLY a valid MySQL query to answer the question.
-    
-    Return ONLY the SQL string or "IRRELEVANT". No markdown formatting.
+    Write ONLY a valid MySQL query to answer the user's question. Do not include any explanations.
+    Return ONLY the SQL string. No markdown formatting.
     
     Question: {question}
     """
@@ -41,12 +39,6 @@ async def sql_node(state: State) -> State:
         "question": state["input_question"]
     })).strip()
     
-    if "IRRELEVANT" in query.upper():
-        state["is_valid_query"] = False
-        state["error"] = "I can only answer questions related to our E-Commerce Analytics Platform."
-        state["sql_query"] = None
-        return state
-
     # Clean possible markdown
     if query.startswith("```sql"):
         query = query.replace("```sql", "").strip()
@@ -54,6 +46,5 @@ async def sql_node(state: State) -> State:
         query = query[:-3].strip()
         
     state["sql_query"] = query
-    state["is_valid_query"] = True
     state["error"] = None
     return state
