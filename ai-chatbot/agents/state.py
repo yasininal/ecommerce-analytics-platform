@@ -8,5 +8,6 @@ class State(TypedDict):
     error: Optional[str]
     retry_count: int
     analysis_text: Optional[str]
+    needs_graph: Optional[bool]
     visualization_code: Optional[str] # To hold Plotly JSON or render data
     final_output: Optional[str]
