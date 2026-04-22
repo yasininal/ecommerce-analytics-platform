@@ -78,6 +78,8 @@ async def chat_endpoint(request: ChatRequest):
         )
 
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":

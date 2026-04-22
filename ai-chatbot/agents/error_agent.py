@@ -22,7 +22,7 @@ prompt = PromptTemplate.from_template(
 )
 
 def build_error_chain():
-    llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0, google_api_key=os.getenv("GOOGLE_API_KEY"))
+    llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0, google_api_key=os.getenv("GOOGLE_API_KEY"))
     return prompt | llm | StrOutputParser()
 
 async def error_node(state: State) -> State:

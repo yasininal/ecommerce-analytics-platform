@@ -18,6 +18,10 @@ spring:
         format_sql: true
     show-sql: true
 
+logging:
+  level:
+    org.springframework.security: DEBUG
+
 jwt:
   secret: 9A45B670A98F7A8D7C8BE0D6F34C68B4A5D9C2E4F69B8A2C4D5E6F7A8B9C0D3E
   expiration: 86400000 # 1 day in milliseconds

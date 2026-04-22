@@ -30,16 +30,25 @@ public class RefreshTokenService {
 
     @Transactional
     public RefreshToken createRefreshToken(Long userId) {
-        // Revoke existing token for user before creating a new one (Revocation)
-        deleteByUserId(userId);
+        com.ecommerce.analytics.entities.User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        RefreshToken refreshToken = new RefreshToken();
-        refreshToken.setUser(userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found")));
-        refreshToken.setExpiryDate(Instant.now().plusMillis(refreshTokenDurationMs));
-        refreshToken.setToken(UUID.randomUUID().toString());
-
-        refreshToken = refreshTokenRepository.save(refreshToken);
-        return refreshToken;
+        // Check if user already has a token
+        return refreshTokenRepository.findByUser(user)
+                .map(token -> {
+                    // Update existing token
+                    token.setToken(UUID.randomUUID().toString());
+                    token.setExpiryDate(Instant.now().plusMillis(refreshTokenDurationMs));
+                    return refreshTokenRepository.save(token);
+                })
+                .orElseGet(() -> {
+                    // Create new token
+                    RefreshToken refreshToken = new RefreshToken();
+                    refreshToken.setUser(user);
+                    refreshToken.setToken(UUID.randomUUID().toString());
+                    refreshToken.setExpiryDate(Instant.now().plusMillis(refreshTokenDurationMs));
+                    return refreshTokenRepository.save(refreshToken);
+                });
     }
 
     public RefreshToken verifyExpiration(RefreshToken token) {
