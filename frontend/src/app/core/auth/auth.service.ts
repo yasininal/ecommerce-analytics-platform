@@ -5,6 +5,7 @@ import { jwtDecode } from 'jwt-decode';
 
 export interface AuthResponse {
   token: string;
+  refreshToken: string;
   id: number;
   email: string;
   roles: string[];
@@ -28,6 +29,9 @@ export class AuthService {
       tap(response => {
         if (response && response.token) {
           localStorage.setItem('token', response.token);
+          if (response.refreshToken) {
+            localStorage.setItem('refreshToken', response.refreshToken);
+          }
           if (response.id) {
             localStorage.setItem('userId', response.id.toString());
           }
@@ -37,8 +41,33 @@ export class AuthService {
     );
   }
 
+  refreshTokenApi(): Observable<any> {
+    return this.http.post(`${this.apiUrl}/refreshtoken`, {
+      refreshToken: this.getRefreshToken()
+    }).pipe(
+      tap((res: any) => {
+        localStorage.setItem('token', res.accessToken);
+        localStorage.setItem('refreshToken', res.refreshToken);
+      })
+    );
+  }
+
   logout(): void {
+    const rToken = this.getRefreshToken();
+    const userId = this.getUserId();
+    if (rToken && userId) {
+      this.http.post(`${this.apiUrl}/logout`, { userId }).subscribe({
+        next: () => this.clearStorage(),
+        error: () => this.clearStorage()
+      });
+    } else {
+      this.clearStorage();
+    }
+  }
+
+  private clearStorage() {
     localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
     localStorage.removeItem('roles');
     localStorage.removeItem('userId');
     this.currentUserSubject.next(null);
@@ -46,6 +75,10 @@ export class AuthService {
 
   get token(): string | null {
     return localStorage.getItem('token');
+  }
+
+  getRefreshToken(): string | null {
+    return localStorage.getItem('refreshToken');
   }
 
   getUserId(): number | null {
@@ -60,17 +93,12 @@ export class AuthService {
         const decodedToken: any = jwtDecode(token);
         this.currentUserSubject.next(decodedToken);
       } catch (error) {
-        this.logout();
+        this.clearStorage();
       }
     }
   }
 
   hasRole(role: string): boolean {
-    const user = this.currentUserSubject.value;
-    // Roles out of our UserDetailsImpl look like ROLE_ADMIN etc.
-    // Or we can get from token. Let's return decoded logic depending on how spring puts it.
-    // Assuming spring jwt token has sub with email. Roles are not manually pushed in subject unless configured.
-    // We can also just read the roles from local storage if the auth response provides it, but doing basic check:
     return localStorage.getItem('roles')?.includes(role) ?? false;
   }
 }
