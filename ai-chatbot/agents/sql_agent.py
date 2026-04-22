@@ -21,6 +21,11 @@ prompt = PromptTemplate.from_template(
     Available database schema:
     {schema}
     
+    IMPORTANT DATA SECURITY (RBAC) RULES:
+    - The current user has ROLE: {user_role} and ID: {user_id}.
+    - If the user is INDIVIDUAL or CORPORATE, you MUST restrict the query to only show data belonging to their user_id (e.g. WHERE user_id = {user_id} or owner_id = {user_id}).
+    - If the user is ADMIN, they can see all data. Do not restrict.
+    
     Write ONLY a valid MySQL query to answer the user's question. Do not include any explanations.
     Return ONLY the SQL string. No markdown formatting.
     
@@ -36,6 +41,8 @@ async def sql_node(state: State) -> State:
     chain = build_sql_chain()
     query = (await chain.ainvoke({
         "schema": SCHEMA_INFO,
+        "user_role": state.get("user_role", "UNKNOWN"),
+        "user_id": state.get("user_id", -1),
         "question": state["input_question"]
     })).strip()
     
