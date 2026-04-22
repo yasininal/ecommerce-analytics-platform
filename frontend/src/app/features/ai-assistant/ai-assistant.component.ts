@@ -250,6 +250,8 @@ export class AiAssistantComponent {
         'Customer distribution'
     ];
 
+    sessionId = Math.random().toString(36).substring(7);
+    
     constructor(private http: HttpClient) { }
 
     sendSuggestion(text: string) {
@@ -265,7 +267,7 @@ export class AiAssistantComponent {
         this.inputText = '';
         this.isLoading = true;
 
-        this.http.post<ChatResponse>('/chatbot/api/chat', { message: text }).subscribe({
+        this.http.post<ChatResponse>('/api/chat/ask', { message: text, sessionId: this.sessionId }).subscribe({
             next: (res) => {
                 this.isLoading = false;
                 this.messages.push({

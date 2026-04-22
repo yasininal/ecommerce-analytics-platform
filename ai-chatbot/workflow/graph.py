@@ -28,6 +28,8 @@ def analysis_router(state: State):
         return "visualization_agent"
     return "end_process"
 
+from langgraph.checkpoint.memory import MemorySaver
+
 def build_workflow():
     workflow = StateGraph(State)
 
@@ -82,4 +84,5 @@ def build_workflow():
     # Visualization ends
     workflow.add_edge("visualization_agent", END)
 
-    return workflow.compile()
+    memory = MemorySaver()
+    return workflow.compile(checkpointer=memory)

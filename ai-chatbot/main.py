@@ -22,6 +22,9 @@ app.add_middleware(
 
 class ChatRequest(BaseModel):
     message: str
+    userId: int | None = None
+    role: str | None = None
+    sessionId: str | None = None
 
 class ChatResponse(BaseModel):
     answer: str
@@ -40,6 +43,9 @@ async def chat_endpoint(request: ChatRequest):
     print(f"Received message: {request.message}")
     initial_state = {
         "input_question": request.message,
+        "user_id": request.userId,
+        "user_role": request.role,
+        "session_id": request.sessionId,
         "is_valid_query": None,
         "sql_query": None,
         "query_result": None,
@@ -55,7 +61,8 @@ async def chat_endpoint(request: ChatRequest):
         if not os.getenv("GOOGLE_API_KEY"):
             raise HTTPException(status_code=500, detail="GOOGLE_API_KEY environment variable not set")
             
-        final_state = await graph.ainvoke(initial_state)
+        config = {"configurable": {"thread_id": request.sessionId or "default_session"}}
+        final_state = await graph.ainvoke(initial_state, config=config)
         print("Graph execution completed.")
 
         # Check if rejected by guardrails or max retries SQL error
