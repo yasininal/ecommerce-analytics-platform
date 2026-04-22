@@ -1,12 +1,12 @@
-import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
+import { HttpInterceptorFn, HttpErrorResponse, HttpRequest, HttpHandlerFn, HttpEvent } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { AuthService } from './auth.service';
-import { catchError, switchMap, throwError, BehaviorSubject, filter, take } from 'rxjs';
+import { catchError, switchMap, throwError, BehaviorSubject, filter, take, Observable } from 'rxjs';
 
 let isRefreshing = false;
 let refreshTokenSubject: BehaviorSubject<any> = new BehaviorSubject<any>(null);
 
-export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
+export const jwtInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, next: HttpHandlerFn): Observable<HttpEvent<unknown>> => {
     const authService = inject(AuthService);
     let authReq = req;
     const token = authService.token;
@@ -16,7 +16,7 @@ export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
     }
 
     return next(authReq).pipe(
-        catchError((error) => {
+        catchError((error: any) => {
             if (error instanceof HttpErrorResponse && !authReq.url.includes('auth/login') && error.status === 401) {
                 return handle401Error(authReq, next, authService);
             }
@@ -25,7 +25,7 @@ export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
     );
 };
 
-function addTokenHeader(request: any, token: string) {
+function addTokenHeader(request: HttpRequest<unknown>, token: string): HttpRequest<unknown> {
     return request.clone({
         setHeaders: {
             Authorization: `Bearer ${token}`
@@ -33,7 +33,7 @@ function addTokenHeader(request: any, token: string) {
     });
 }
 
-function handle401Error(request: any, next: any, authService: AuthService) {
+function handle401Error(request: HttpRequest<unknown>, next: HttpHandlerFn, authService: AuthService): Observable<HttpEvent<unknown>> {
     if (!isRefreshing) {
         isRefreshing = true;
         refreshTokenSubject.next(null);
@@ -46,7 +46,7 @@ function handle401Error(request: any, next: any, authService: AuthService) {
                     refreshTokenSubject.next(res.accessToken);
                     return next(addTokenHeader(request, res.accessToken));
                 }),
-                catchError((err) => {
+                catchError((err: any) => {
                     isRefreshing = false;
                     authService.logout();
                     return throwError(() => err);

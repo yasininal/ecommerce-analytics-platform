@@ -34,8 +34,8 @@ prompt = PromptTemplate.from_template(
 )
 
 def build_sql_chain():
-    llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0, google_api_key=os.getenv("GOOGLE_API_KEY"))
-    return prompt | llm | StrOutputParser()
+    llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0, google_api_key=os.getenv("GOOGLE_API_KEY"))
+    return prompt | llm | JsonOutputParser()
 
 async def sql_node(state: State) -> State:
     chain = build_sql_chain()
