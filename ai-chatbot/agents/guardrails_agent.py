@@ -19,8 +19,11 @@ prompt = PromptTemplate.from_template(
 )
 
 def build_guardrails_chain():
-
-    llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0, google_api_key=os.getenv("GOOGLE_API_KEY"))
+    llm = ChatGoogleGenerativeAI(
+        model="gemini-2.0-flash",
+        temperature=0,
+        google_api_key=os.getenv("GOOGLE_API_KEY")
+    )
     return prompt | llm | StrOutputParser()
 
 async def guardrails_node(state: State) -> State:
@@ -39,7 +42,7 @@ async def guardrails_node(state: State) -> State:
         state["error"] = "I can only answer questions related to our E-Commerce Analytics Platform data."
         state["final_output"] = state["error"]
         
-    else: # IN_SCOPE
+    else:  # IN_SCOPE
         state["is_valid_query"] = True
         state["error"] = None
         

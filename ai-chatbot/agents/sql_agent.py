@@ -34,8 +34,12 @@ prompt = PromptTemplate.from_template(
 )
 
 def build_sql_chain():
-    llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0, google_api_key=os.getenv("GOOGLE_API_KEY"))
-    return prompt | llm | JsonOutputParser()
+    llm = ChatGoogleGenerativeAI(
+        model="gemini-2.0-flash",
+        temperature=0,
+        google_api_key=os.getenv("GOOGLE_API_KEY")
+    )
+    return prompt | llm | StrOutputParser()
 
 async def sql_node(state: State) -> State:
     chain = build_sql_chain()
@@ -49,6 +53,8 @@ async def sql_node(state: State) -> State:
     # Clean possible markdown
     if query.startswith("```sql"):
         query = query.replace("```sql", "").strip()
+    if query.startswith("```"):
+        query = query.replace("```", "").strip()
     if query.endswith("```"):
         query = query[:-3].strip()
         

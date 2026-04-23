@@ -1,7 +1,7 @@
 import json
 from langchain_core.prompts import PromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.output_parsers import JsonOutputParser
+from langchain_core.output_parsers import StrOutputParser
 from agents.state import State
 import os
 
@@ -23,8 +23,12 @@ prompt = PromptTemplate.from_template(
     """
 )
 
-def build_visualization_chain():
-    llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0.1, google_api_key=os.getenv("GOOGLE_API_KEY"))
+def build_viz_chain():
+    llm = ChatGoogleGenerativeAI(
+        model="gemini-2.0-flash",
+        temperature=0.1,
+        google_api_key=os.getenv("GOOGLE_API_KEY")
+    )
     return prompt | llm | StrOutputParser()
 
 async def visualization_node(state: State) -> State:
@@ -39,7 +43,15 @@ async def visualization_node(state: State) -> State:
             "question": state["input_question"],
             "data": str(data[:50])
         })
-        state["visualization_code"] = json.dumps(res)
+        # Clean markdown if present
+        res = res.strip()
+        if res.startswith("```json"):
+            res = res.replace("```json", "").strip()
+        if res.startswith("```"):
+            res = res.replace("```", "").strip()
+        if res.endswith("```"):
+            res = res[:-3].strip()
+        state["visualization_code"] = res
     except Exception as e:
         state["visualization_code"] = None
         

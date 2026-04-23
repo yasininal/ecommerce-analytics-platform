@@ -22,7 +22,11 @@ prompt = PromptTemplate.from_template(
 )
 
 def build_error_chain():
-    llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0, google_api_key=os.getenv("GOOGLE_API_KEY"))
+    llm = ChatGoogleGenerativeAI(
+        model="gemini-2.0-flash",
+        temperature=0,
+        google_api_key=os.getenv("GOOGLE_API_KEY")
+    )
     return prompt | llm | StrOutputParser()
 
 async def error_node(state: State) -> State:
@@ -37,11 +41,13 @@ async def error_node(state: State) -> State:
     # Clean possible markdown
     if query.startswith("```sql"):
         query = query.replace("```sql", "").strip()
+    if query.startswith("```"):
+        query = query.replace("```", "").strip()
     if query.endswith("```"):
         query = query[:-3].strip()
         
     state["sql_query"] = query
-    state["error"] = None # Clear the error for the next execution attempt
+    state["error"] = None
     
     # Increment retry count
     current_retries = state.get("retry_count", 0)
