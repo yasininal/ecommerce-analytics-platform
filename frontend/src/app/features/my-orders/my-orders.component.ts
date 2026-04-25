@@ -141,6 +141,6 @@ export class MyOrdersComponent implements OnInit {
     isStepDone(status: string, step: string): boolean {
         const si = this.statusOrder.indexOf(status);
         const ti = this.statusOrder.indexOf(step);
-        return si > ti;
+        return si >= ti;
     }
 }

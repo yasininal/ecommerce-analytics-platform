@@ -38,6 +38,9 @@ export interface ProductData {
     unitPrice: number;
     categoryName: string;
     storeName: string;
+    description?: string;
+    imageUrl?: string;
+    stockQuantity: number;
 }
 
 export interface CustomerData {

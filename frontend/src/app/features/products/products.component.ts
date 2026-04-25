@@ -55,6 +55,9 @@ import { NotificationService } from '../../core/services/notification.service';
             <div class="product-meta">
                SKU: {{ product.sku }} <span *ngIf="userRole === 'ROLE_ADMIN'">· {{ product.storeName }}</span>
             </div>
+            <div class="product-stock" [class.low-stock]="product.stockQuantity < 10">
+               📦 Stock: {{ product.stockQuantity }} units
+            </div>
             <div class="product-actions" *ngIf="userRole !== 'ROLE_INDIVIDUAL'">
               <button class="action-btn edit" (click)="openEditModal(product)">Edit</button>
               <button class="action-btn delete" (click)="deleteProduct(product)">Delete</button>
@@ -110,6 +113,18 @@ import { NotificationService } from '../../core/services/notification.service';
               <option value="" disabled>Select a store...</option>
               <option *ngFor="let s of allStores" [value]="s.name">{{ s.name }}</option>
             </select>
+          </div>
+          <div class="form-group">
+            <label>Image URL (Optional)</label>
+            <input type="text" class="dp-input" [(ngModel)]="formProduct.imageUrl" placeholder="https://images.unsplash.com/..." />
+          </div>
+          <div class="form-group">
+            <label>Stock Quantity</label>
+            <input type="number" class="dp-input" [(ngModel)]="formProduct.stockQuantity" placeholder="0" />
+          </div>
+          <div class="form-group">
+            <label>Description</label>
+            <textarea class="dp-input" [(ngModel)]="formProduct.description" placeholder="Product details..." rows="3" style="resize:none; padding:12px; font-family:inherit;"></textarea>
           </div>
         </div>
         <div class="modal-actions">
@@ -199,6 +214,8 @@ import { NotificationService } from '../../core/services/notification.service';
     .product-price { font-size: 20px; font-weight: 700; color: var(--accent); margin-bottom: 12px; }
     
     .product-meta { font-size: 12px; color: var(--text-muted); margin-top: auto; }
+    .product-stock { font-size: 12px; font-weight: 600; color: #4ade80; margin-top: 4px; }
+    .product-stock.low-stock { color: #f87171; }
     
     .product-actions { 
       display: flex; gap: 8px; margin-top: 12px; 
@@ -328,8 +345,9 @@ export class ProductsComponent implements OnInit {
       const hasName = !!this.formProduct.name?.trim();
       const hasSku = !!this.formProduct.sku?.trim();
       const hasPrice = this.formProduct.unitPrice !== undefined && this.formProduct.unitPrice >= 0;
+      const hasStock = this.formProduct.stockQuantity !== undefined && this.formProduct.stockQuantity >= 0;
       const hasStore = this.userRole === 'ROLE_CORPORATE' || !!this.formProduct.storeName;
-      return hasName && hasSku && hasPrice && hasStore;
+      return hasName && hasSku && hasPrice && hasStock && hasStore;
   }
 
   openAddModal() {
@@ -337,7 +355,16 @@ export class ProductsComponent implements OnInit {
     const defaultStore = this.userRole === 'ROLE_ADMIN' && this.allStores.length > 0 
         ? this.allStores[0].name 
         : this.corporateStoreName;
-    this.formProduct = { name: '', sku: '', unitPrice: 0, categoryName: 'Electronics', storeName: defaultStore };
+    this.formProduct = { 
+        name: '', 
+        sku: '', 
+        unitPrice: 0, 
+        categoryName: 'Electronics', 
+        storeName: defaultStore,
+        imageUrl: '',
+        stockQuantity: 0,
+        description: ''
+    };
     this.showModal = true;
   }
 
@@ -416,6 +443,9 @@ export class ProductsComponent implements OnInit {
 
   /** Smart image: tries to match product name keywords first, then falls back to category */
   getSmartImage(product: ProductData): string {
+    if (product.imageUrl && product.imageUrl.trim() !== '') {
+        return product.imageUrl;
+    }
     const name = product.name.toLowerCase();
     
     // Name-based matching for more accurate images
