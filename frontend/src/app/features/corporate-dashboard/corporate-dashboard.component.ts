@@ -201,6 +201,9 @@ export class CorporateDashboardComponent implements OnInit {
 
   get filteredOrders(): OrderDto[] {
     if (this.activeTab === 'all') return this.orders;
+    if (this.activeTab === 'refunded') {
+        return this.orders.filter(o => o.status === 'REFUNDED' || o.status === 'CANCELLED');
+    }
     return this.orders.filter(o => o.status.toLowerCase() === this.activeTab);
   }
 
