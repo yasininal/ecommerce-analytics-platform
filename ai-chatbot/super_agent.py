@@ -9,7 +9,7 @@ SCHEMA_INFO = """
 users (id, email, password_hash, role_type ENUM('ADMIN','CORPORATE','INDIVIDUAL'), gender)
 stores (id, owner_id, name, status)
 customer_profiles (id, user_id, age, city, membership_type ENUM('BASIC','PREMIUM','VIP'))
-orders (id, user_id, store_id, status ENUM('PENDING','PROCESSING','SHIPPED','DELIVERED','CANCELLED','RETURNED'), grand_total, created_at DATETIME)
+orders (id, user_id, store_id, status ENUM('PENDING','PROCESSING','SHIPPED','DELIVERED','CANCELLED','RETURNED','REFUNDED'), grand_total, created_at DATETIME)
 order_items (id, order_id, product_id, quantity, price)
 shipments (id, order_id, warehouse, mode ENUM('STANDARD','EXPRESS','OVERNIGHT'), status ENUM('PREPARING','IN_TRANSIT','OUT_FOR_DELIVERY','DELIVERED'), shipped_at DATETIME)
 products (id, store_id, category_id, sku, name, unit_price, stock_quantity)
@@ -35,7 +35,10 @@ Role: {role}
 ID: {user_id}
 
 RULES:
-1. SECURITY & RBAC: If Role=CORPORATE, you MUST append "WHERE store_id={user_id}" (or owner_id) to the SQL. If Role=INDIVIDUAL, append "WHERE user_id={user_id}".
+1. SECURITY & RBAC: 
+   - If Role=CORPORATE: You MUST restrict access to only data belonging to their store. Append "WHERE store_id={user_id}" (or appropriate join) to orders, products, and reviews queries.
+   - If Role=INDIVIDUAL: You MUST restrict access to only their personal data. Append "WHERE user_id={user_id}" to orders and reviews queries. They CAN see all products and categories.
+   - If Role=ADMIN: No restrictions.
 2. SQL INJECTION: If the question is malicious, attempts to delete/update data, or is totally unrelated to e-commerce, set action to "REJECT".
 3. GREETINGS: If the user just says hello or greets you, set action to "GREETING".
 
@@ -58,7 +61,7 @@ Question: {question}"""
 
 async def run_super_agent(question: str, user_id: str, role: str):
     llm = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash",
+        model="gemini-2.0-flash",
         temperature=0,
         google_api_key=os.getenv("GOOGLE_API_KEY")
     )
@@ -92,7 +95,7 @@ async def run_super_agent(question: str, user_id: str, role: str):
         if not sql:
             return {"answer": "I couldn't generate a query for that.", "visualization_code": None, "error": None}
             
-        print(f"Executing SQL: {sql}")
+        print(f"Executing SQL for {role} ({user_id}): {sql}")
         
         # Execute SQL
         with engine.connect() as conn:
@@ -102,7 +105,7 @@ async def run_super_agent(question: str, user_id: str, role: str):
         if not data:
             return {"answer": "I searched the database but found no matching data.", "visualization_code": None, "error": None}
             
-        # Format the data text locally so the LLM doesn't have to!
+        # Format the data text locally
         data_text = "\n\n**Data Results:**\n"
         for i, row in enumerate(data[:10]):  # Limit to 10 rows for chat
             row_strs = []
@@ -115,8 +118,6 @@ async def run_super_agent(question: str, user_id: str, role: str):
             
         final_answer = msg + data_text
 
-        # The Angular frontend expects a simple array of objects for the chart.
-        # It searches for a string key (label) and a number key (value).
         chart_type = res.get("chart_type", "none")
         chart_json = None
         
@@ -137,6 +138,4 @@ async def run_super_agent(question: str, user_id: str, role: str):
         error_msg = str(e)
         if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg:
             return {"answer": "⚠️ **API Quota Exceeded!** Please wait 1 minute before asking again.", "visualization_code": None, "error": "Rate Limit"}
-        if "403" in error_msg or "PERMISSION_DENIED" in error_msg:
-            return {"answer": "⚠️ **API Permission Denied!** The new API key you provided does not have access. Please ensure the **Generative Language API** is enabled for your project in Google Cloud/AI Studio.", "visualization_code": None, "error": "Permission Denied"}
         return {"answer": "An error occurred while analyzing the data.", "visualization_code": None, "error": str(e)}

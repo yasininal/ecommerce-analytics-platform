@@ -211,8 +211,10 @@ export class AiAssistantComponent {
         this.inputText = '';
         this.isLoading = true;
 
-        this.http.post<ChatResponse>('/api/chat/ask', { 
+        this.http.post<ChatResponse>('/api/chat/', { 
             message: text,
+            userId: this.authService.getUserId(),
+            role: this.authService.getUserRole(),
             sessionId: this.sessionId 
         }).subscribe({
 
