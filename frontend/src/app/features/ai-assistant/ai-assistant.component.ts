@@ -178,16 +178,7 @@ export class AiAssistantComponent {
     isLoading = false;
     messages: ChatMessage[] = [];
 
-    suggestions = [
-        'Geçen aya göre satışlar nasıl değişti?',
-        'Stoku 10\'un altına düşen ürünler?',
-        'En değerli 5 müşterim kimler?',
-        'Bekleyen siparişlerin toplam değeri nedir?',
-        'Hangi kategoride iade oranı en yüksek?',
-        'Bu hafta yapılan sevkiyatların durumu?',
-        '1 yıldız alan ürünleri listele',
-        'Aylık gelir trendini grafik olarak göster'
-    ];
+    suggestions: string[] = [];
 
     sessionId = Math.random().toString(36).substring(7);
     @ViewChild('messagesArea') private messagesArea!: ElementRef;
@@ -196,6 +187,44 @@ export class AiAssistantComponent {
         private http: HttpClient,
         private authService: AuthService
     ) { }
+
+    ngOnInit() {
+        this.setRoleBasedSuggestions();
+    }
+
+    setRoleBasedSuggestions() {
+        const role = this.authService.getUserRole();
+        
+        if (role === 'ROLE_INDIVIDUAL') {
+            this.suggestions = [
+                'Son verdiğim siparişi ve detaylarını göster',
+                'Bu ay toplam ne kadar harcama yaptım?',
+                'En çok hangi kategoriden ürün aldım?',
+                'Bekleyen siparişlerimin durumu nedir?',
+                'Aldığım ürünlere verdiğim puan ortalaması?',
+                'Aylık harcama trendimi grafik olarak göster'
+            ];
+        } else if (role === 'ROLE_CORPORATE') {
+            this.suggestions = [
+                'En çok satan 5 ürünüm hangisi?',
+                'Stoku 10\'un altına düşen ürünlerimi listele',
+                'Bekleyen siparişlerimin toplam değeri nedir?',
+                'Mağazamın aylık gelir trendini grafik göster',
+                'Ürünlerime gelen negatif yorumlar neler?',
+                'En sadık 5 müşterim kimler?'
+            ];
+        } else {
+            // ADMIN
+            this.suggestions = [
+                'Tüm sistemin aylık ciro trendini göster',
+                'En çok satış yapan ilk 3 mağaza hangisi?',
+                'Şehirlere göre satış dağılımı nedir?',
+                'Hangi kategoride iade oranı en yüksek?',
+                'Sistemdeki toplam kullanıcı ve mağaza sayısı?',
+                'Son 7 günde kazanılan yeni müşteri sayısı?'
+            ];
+        }
+    }
 
 
     sendSuggestion(text: string) {
