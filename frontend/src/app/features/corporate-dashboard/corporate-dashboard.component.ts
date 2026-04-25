@@ -71,8 +71,8 @@ interface OrderDto {
               <button *ngIf="order.status === 'PENDING'" class="act-btn confirm" (click)="updateStatus(order, 'PROCESSING')">✓ Confirm</button>
               <button *ngIf="order.status === 'PROCESSING'" class="act-btn ship" (click)="updateStatus(order, 'SHIPPED')">🚚 Ship</button>
               <button *ngIf="order.status === 'SHIPPED'" class="act-btn deliver" (click)="updateStatus(order, 'DELIVERED')">📦 Delivered</button>
-              <button *ngIf="order.status === 'PENDING' || order.status === 'PROCESSING'" class="act-btn cancel" (click)="updateStatus(order, 'CANCELLED')">✕</button>
-              <span *ngIf="order.status === 'DELIVERED' || order.status === 'CANCELLED' || order.status === 'RETURNED'" class="done-label">—</span>
+              <button *ngIf="order.status === 'PENDING' || order.status === 'PROCESSING'" class="act-btn cancel" (click)="cancelOrder(order)">✕ Cancel & Refund</button>
+              <span *ngIf="order.status === 'DELIVERED' || order.status === 'CANCELLED' || order.status === 'RETURNED' || order.status === 'REFUNDED'" class="done-label">—</span>
             </div>
           </div>
         </div>
@@ -121,9 +121,10 @@ interface OrderDto {
     .status-pill.delivered { background: rgba(74,222,128,0.15); color: #22c55e; }
     .status-pill.cancelled { background: rgba(248,113,113,0.15); color: #ef4444; }
     .status-pill.returned { background: rgba(248,113,113,0.15); color: #ef4444; }
+    .status-pill.refunded { background: rgba(16,185,129,0.15); color: #10b981; }
 
     .action-col { display: flex; gap: 6px; }
-    .act-btn { padding: 6px 12px; border-radius: 8px; border: none; cursor: pointer; font-size: 12px; font-weight: 700; transition: 0.2s; }
+    .act-btn { padding: 6px 12px; border-radius: 8px; border: none; cursor: pointer; font-size: 11px; font-weight: 700; transition: 0.2s; white-space: nowrap; }
     .act-btn.confirm { background: rgba(74,222,128,0.15); color: #22c55e; }
     .act-btn.confirm:hover { background: #22c55e; color: white; }
     .act-btn.ship { background: rgba(168,85,247,0.15); color: #a855f7; }
@@ -156,6 +157,7 @@ export class CorporateDashboardComponent implements OnInit {
     { key: 'processing', label: 'Processing', count: 0 },
     { key: 'shipped', label: 'Shipped', count: 0 },
     { key: 'delivered', label: 'Delivered', count: 0 },
+    { key: 'refunded', label: 'Refunded', count: 0 },
   ];
 
   constructor(private dashboardService: DashboardService, private http: HttpClient) { }
@@ -194,6 +196,7 @@ export class CorporateDashboardComponent implements OnInit {
     this.tabs[2].count = this.orders.filter(o => o.status === 'PROCESSING').length;
     this.tabs[3].count = this.orders.filter(o => o.status === 'SHIPPED').length;
     this.tabs[4].count = this.orders.filter(o => o.status === 'DELIVERED').length;
+    this.tabs[5].count = this.orders.filter(o => o.status === 'REFUNDED' || o.status === 'CANCELLED').length;
   }
 
   get filteredOrders(): OrderDto[] {
@@ -212,5 +215,11 @@ export class CorporateDashboardComponent implements OnInit {
       },
       error: (err) => console.error('Status update failed', err)
     });
+  }
+
+  cancelOrder(order: OrderDto) {
+      if (confirm(`Are you sure you want to cancel Order #${order.id}? This will process a full refund to the customer.`)) {
+          this.updateStatus(order, 'REFUNDED');
+      }
   }
 }

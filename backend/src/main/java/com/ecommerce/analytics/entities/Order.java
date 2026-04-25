@@ -26,7 +26,7 @@ public class Order {
     private Store store;
 
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "ENUM('PENDING','PROCESSING','SHIPPED','DELIVERED','CANCELLED','RETURNED') DEFAULT 'PENDING'")
+    @Column(columnDefinition = "ENUM('PENDING','PROCESSING','SHIPPED','DELIVERED','CANCELLED','RETURNED','REFUNDED') DEFAULT 'PENDING'")
     private OrderStatus status;
 
     @Column(name = "grand_total", nullable = false, precision = 10, scale = 2)
@@ -41,6 +41,6 @@ public class Order {
     }
 
     public enum OrderStatus {
-        PENDING, PROCESSING, SHIPPED, DELIVERED, CANCELLED, RETURNED
+        PENDING, PROCESSING, SHIPPED, DELIVERED, CANCELLED, RETURNED, REFUNDED
     }
 }

@@ -38,7 +38,10 @@ interface OrderDto {
         <div class="order-card" *ngFor="let order of orders">
           <div class="order-top">
             <span class="order-id">Order #{{ order.id }}</span>
-            <span class="status-badge" [ngClass]="order.status.toLowerCase()">{{ order.status }}</span>
+            <div class="status-group">
+              <span class="status-badge" [ngClass]="order.status.toLowerCase()">{{ order.status }}</span>
+              <span class="refund-note" *ngIf="order.status === 'CANCELLED' || order.status === 'REFUNDED'">💰 Refund Processed</span>
+            </div>
           </div>
           <div class="order-details">
             <div class="detail-row">
@@ -98,6 +101,10 @@ interface OrderDto {
     .status-badge.delivered { background: rgba(74,222,128,0.1); color: #22c55e; }
     .status-badge.cancelled { background: rgba(248,113,113,0.1); color: #ef4444; }
     .status-badge.returned { background: rgba(248,113,113,0.1); color: #ef4444; }
+    .status-badge.refunded { background: rgba(16,185,129,0.1); color: #10b981; }
+    
+    .status-group { display: flex; align-items: center; gap: 12px; }
+    .refund-note { font-size: 11px; font-weight: 700; color: #10b981; background: rgba(16,185,129,0.05); padding: 4px 10px; border-radius: 6px; border: 1px dashed rgba(16,185,129,0.3); }
 
     .order-details { display: flex; gap: 32px; margin-bottom: 20px; }
     .detail-row { display: flex; flex-direction: column; gap: 2px; }
@@ -120,7 +127,7 @@ export class MyOrdersComponent implements OnInit {
     orders: OrderDto[] = [];
     loading = true;
 
-    private statusOrder = ['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED'];
+    private statusOrder = ['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'REFUNDED'];
 
     constructor(private http: HttpClient) { }
 
