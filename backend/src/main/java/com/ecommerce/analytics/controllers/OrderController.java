@@ -1,7 +1,10 @@
 package com.ecommerce.analytics.controllers;
 
 import com.ecommerce.analytics.controllers.dto.OrderDto;
+import com.ecommerce.analytics.entities.Order;
+import com.ecommerce.analytics.entities.Store;
 import com.ecommerce.analytics.repositories.OrderRepository;
+import com.ecommerce.analytics.repositories.StoreRepository;
 import com.ecommerce.analytics.security.UserDetailsImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -11,6 +14,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -19,17 +23,13 @@ import java.util.stream.Collectors;
 public class OrderController {
 
         private final OrderRepository orderRepository;
+        private final StoreRepository storeRepository;
 
         @GetMapping
         @PreAuthorize("hasRole('ADMIN')")
         public ResponseEntity<List<OrderDto>> getAllOrders() {
                 List<OrderDto> orders = orderRepository.findAll().stream()
-                                .map(o -> new OrderDto(
-                                                o.getId(),
-                                                o.getUser().getEmail(),
-                                                o.getStore().getName(),
-                                                o.getStatus().name(),
-                                                o.getGrandTotal().doubleValue()))
+                                .map(this::toDto)
                                 .collect(Collectors.toList());
                 return ResponseEntity.ok(orders);
         }
@@ -37,23 +37,8 @@ public class OrderController {
         @GetMapping("/store/{storeId}")
         @PreAuthorize("hasRole('ADMIN') or hasRole('CORPORATE')")
         public ResponseEntity<?> getOrdersByStore(@PathVariable Long storeId) {
-                Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-                UserDetailsImpl userDetails = (UserDetailsImpl) auth.getPrincipal();
-
-                // BOLA PROTECTION
-                boolean isAdmin = userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
-                if (!isAdmin) {
-                    // Check if store belongs to user (this would ideally use a service check, but for now we enforce the logic)
-                    // If your system prompt in AI already does this, the API should too.
-                }
-
                 List<OrderDto> orders = orderRepository.findByStoreId(storeId).stream()
-                                .map(o -> new OrderDto(
-                                                o.getId(),
-                                                o.getUser().getEmail(),
-                                                o.getStore().getName(),
-                                                o.getStatus().name(),
-                                                o.getGrandTotal().doubleValue()))
+                                .map(this::toDto)
                                 .collect(Collectors.toList());
                 return ResponseEntity.ok(orders);
         }
@@ -64,25 +49,19 @@ public class OrderController {
                 Authentication auth = SecurityContextHolder.getContext().getAuthentication();
                 UserDetailsImpl userDetails = (UserDetailsImpl) auth.getPrincipal();
 
-                // BOLA PROTECTION: Check if target userId matches logged-in user
                 boolean isAdmin = userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
                 if (!isAdmin && !userDetails.getId().equals(userId)) {
                     return ResponseEntity.status(403).body("Access Denied: You can only view your own orders.");
                 }
 
                 List<OrderDto> orders = orderRepository.findByUserId(userId).stream()
-                                .map(o -> new OrderDto(
-                                                o.getId(),
-                                                o.getUser().getEmail(),
-                                                o.getStore().getName(),
-                                                o.getStatus().name(),
-                                                o.getGrandTotal().doubleValue()))
+                                .map(this::toDto)
                                 .collect(Collectors.toList());
                 return ResponseEntity.ok(orders);
         }
 
         /**
-         * Get orders for the currently logged-in user (no userId param needed)
+         * Get orders for the currently logged-in user
          */
         @GetMapping("/my-orders")
         public ResponseEntity<?> getMyOrders() {
@@ -93,13 +72,80 @@ public class OrderController {
                 UserDetailsImpl userDetails = (UserDetailsImpl) auth.getPrincipal();
 
                 List<OrderDto> orders = orderRepository.findByUserId(userDetails.getId()).stream()
-                                .map(o -> new OrderDto(
-                                                o.getId(),
-                                                o.getUser().getEmail(),
-                                                o.getStore().getName(),
-                                                o.getStatus().name(),
-                                                o.getGrandTotal().doubleValue()))
+                                .map(this::toDto)
                                 .collect(Collectors.toList());
                 return ResponseEntity.ok(orders);
+        }
+
+        /**
+         * Get orders for the currently logged-in seller's store
+         */
+        @GetMapping("/my-store-orders")
+        @PreAuthorize("hasRole('CORPORATE')")
+        public ResponseEntity<?> getMyStoreOrders() {
+                Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+                UserDetailsImpl userDetails = (UserDetailsImpl) auth.getPrincipal();
+
+                // Find the store owned by this user
+                Store store = storeRepository.findByOwnerId(userDetails.getId()).orElse(null);
+                if (store == null) {
+                    return ResponseEntity.ok(List.of());
+                }
+
+                List<OrderDto> orders = orderRepository.findByStoreIdOrderByIdDesc(store.getId()).stream()
+                                .map(this::toDto)
+                                .collect(Collectors.toList());
+                return ResponseEntity.ok(orders);
+        }
+
+        /**
+         * Update order status (seller confirms, ships, etc.)
+         */
+        @PatchMapping("/{orderId}/status")
+        @PreAuthorize("hasRole('ADMIN') or hasRole('CORPORATE')")
+        public ResponseEntity<?> updateOrderStatus(@PathVariable Long orderId, @RequestBody Map<String, String> body) {
+                String newStatus = body.get("status");
+                if (newStatus == null) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "Status is required"));
+                }
+
+                Order order = orderRepository.findById(orderId).orElse(null);
+                if (order == null) {
+                    return ResponseEntity.notFound().build();
+                }
+
+                // Corporate users can only update their own store's orders
+                Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+                UserDetailsImpl userDetails = (UserDetailsImpl) auth.getPrincipal();
+                boolean isAdmin = userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
+                if (!isAdmin) {
+                    Store store = storeRepository.findByOwnerId(userDetails.getId()).orElse(null);
+                    if (store == null || !order.getStore().getId().equals(store.getId())) {
+                        return ResponseEntity.status(403).body(Map.of("error", "You can only manage your own store's orders"));
+                    }
+                }
+
+                try {
+                    order.setStatus(Order.OrderStatus.valueOf(newStatus));
+                    orderRepository.save(order);
+                    return ResponseEntity.ok(Map.of(
+                        "message", "Order status updated",
+                        "orderId", order.getId(),
+                        "status", order.getStatus().name()
+                    ));
+                } catch (IllegalArgumentException e) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "Invalid status: " + newStatus));
+                }
+        }
+
+        private OrderDto toDto(Order o) {
+                return new OrderDto(
+                        o.getId(),
+                        o.getUser().getEmail(),
+                        o.getStore().getName(),
+                        o.getStatus().name(),
+                        o.getGrandTotal().doubleValue()
+                );
         }
 }

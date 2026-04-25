@@ -39,7 +39,7 @@ public class DashboardService {
 
     public CorporateSummaryDto getCorporateDashboardSummary(String email) {
         User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
-        List<Store> stores = storeRepository.findByOwnerId(user.getId());
+        List<Store> stores = storeRepository.findAllByOwnerId(user.getId());
 
         if (stores.isEmpty()) {
             return CorporateSummaryDto.builder().build(); // No store for corporate role

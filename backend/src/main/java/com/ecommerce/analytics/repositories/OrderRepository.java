@@ -13,6 +13,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     List<Order> findByStoreId(Long storeId);
 
+    List<Order> findByStoreIdOrderByIdDesc(Long storeId);
+
     @Query("SELECT SUM(o.grandTotal) FROM Order o")
     Double sumGrandTotal();
 

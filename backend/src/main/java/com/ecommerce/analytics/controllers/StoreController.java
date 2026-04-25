@@ -24,7 +24,7 @@ public class StoreController {
     @GetMapping("/my-store")
     @PreAuthorize("hasRole('CORPORATE')")
     public ResponseEntity<List<StoreDto>> getMyStores(@AuthenticationPrincipal UserDetailsImpl userDetails) {
-        List<Store> stores = storeRepository.findByOwnerId(userDetails.getId());
+        List<Store> stores = storeRepository.findAllByOwnerId(userDetails.getId());
         List<StoreDto> dtos = stores.stream().map(store -> StoreDto.builder()
                 .id(store.getId())
                 .name(store.getName())
