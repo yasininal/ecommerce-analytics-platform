@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
+import { CartService } from '../../core/services/cart.service';
 
 export interface Product {
     id: number;
@@ -94,6 +95,12 @@ export interface Product {
                     <span class="currency">$</span>
                     <span class="val">{{ p.unitPrice }}</span>
                   </div>
+                  <button class="add-cart-btn" (click)="addToCart($event, p)" [class.added]="addedIds.has(p.id)">
+                    <span *ngIf="!addedIds.has(p.id)">🛒</span>
+                    <span *ngIf="addedIds.has(p.id)">✅</span>
+                  </button>
+                </div>
+                <div class="stock-row">
                   <div class="stock-status" [class.low]="p.stockQuantity < 20">
                     <div class="dot"></div>
                     {{ p.stockQuantity }} left
@@ -234,6 +241,10 @@ export interface Product {
     .stock-status { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; color: #4ade80; }
     .stock-status.low { color: #f87171; }
     .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .stock-row { padding: 0 24px 16px; }
+    .add-cart-btn { width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-elevated); cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+    .add-cart-btn:hover { background: var(--accent); border-color: var(--accent); transform: scale(1.1); }
+    .add-cart-btn.added { background: #22c55e; border-color: #22c55e; }
 
     .empty-state { text-align: center; padding: 80px 0; }
     .empty-icon { font-size: 64px; margin-bottom: 20px; opacity: 0.5; }
@@ -248,8 +259,9 @@ export class CatalogComponent implements OnInit {
     activeCategory = 'All';
     searchQuery = '';
     loading = true;
+    addedIds = new Set<number>();
 
-    constructor(private http: HttpClient, private router: Router) { }
+    constructor(private http: HttpClient, private router: Router, private cartService: CartService) { }
 
     ngOnInit() { this.loadProducts(); }
 
@@ -279,4 +291,18 @@ export class CatalogComponent implements OnInit {
     }
 
     viewDetail(id: number) { this.router.navigate(['/catalog', id]); }
+
+    addToCart(event: Event, p: Product) {
+        event.stopPropagation();
+        this.cartService.addToCart({
+            productId: p.id,
+            productName: p.name,
+            price: p.unitPrice,
+            quantity: 1,
+            storeName: p.storeName,
+            categoryName: p.categoryName
+        });
+        this.addedIds.add(p.id);
+        setTimeout(() => this.addedIds.delete(p.id), 2000);
+    }
 }

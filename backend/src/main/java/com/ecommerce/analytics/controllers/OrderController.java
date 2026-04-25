@@ -80,4 +80,26 @@ public class OrderController {
                                 .collect(Collectors.toList());
                 return ResponseEntity.ok(orders);
         }
+
+        /**
+         * Get orders for the currently logged-in user (no userId param needed)
+         */
+        @GetMapping("/my-orders")
+        public ResponseEntity<?> getMyOrders() {
+                Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+                if (auth == null || "anonymousUser".equals(auth.getPrincipal())) {
+                    return ResponseEntity.status(401).body("Not authenticated");
+                }
+                UserDetailsImpl userDetails = (UserDetailsImpl) auth.getPrincipal();
+
+                List<OrderDto> orders = orderRepository.findByUserId(userDetails.getId()).stream()
+                                .map(o -> new OrderDto(
+                                                o.getId(),
+                                                o.getUser().getEmail(),
+                                                o.getStore().getName(),
+                                                o.getStatus().name(),
+                                                o.getGrandTotal().doubleValue()))
+                                .collect(Collectors.toList());
+                return ResponseEntity.ok(orders);
+        }
 }

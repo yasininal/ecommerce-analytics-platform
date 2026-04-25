@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { ThemeService } from '../../core/services/theme.service';
+import { CartService } from '../../core/services/cart.service';
 
 interface NavItem {
     label: string;
@@ -76,6 +77,11 @@ interface NavItem {
             <button class="theme-toggle-btn" (click)="toggleTheme()" [title]="currentTheme === 'light' ? 'Dark Mode' : 'Light Mode'">
               {{ currentTheme === 'light' ? '🌙' : '☀️' }}
             </button>
+            <!-- Cart Icon -->
+            <a routerLink="/cart" class="cart-icon-btn" title="Shopping Cart">
+              🛒
+              <span class="cart-badge" *ngIf="cartCount > 0">{{ cartCount }}</span>
+            </a>
             <!-- User is Logged In -->
             <div class="user-pill" *ngIf="isLoggedIn">
 
@@ -364,6 +370,10 @@ interface NavItem {
     }
     .user-email { font-size: 13px; font-weight: 500; color: var(--text-primary); }
 
+    .cart-icon-btn { position: relative; width: 40px; height: 40px; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; text-decoration: none; transition: all var(--transition); }
+    .cart-icon-btn:hover { background: var(--bg-hover); border-color: var(--accent); transform: scale(1.05); }
+    .cart-badge { position: absolute; top: -4px; right: -4px; background: var(--accent); color: white; font-size: 10px; font-weight: 800; min-width: 18px; height: 18px; border-radius: 99px; display: flex; align-items: center; justify-content: center; padding: 0 4px; }
+
     .main-content {
       flex: 1;
       overflow-y: auto;
@@ -381,6 +391,7 @@ export class LayoutComponent {
     currentTheme = 'light';
     sidebarOpen = false;
     isLoggedIn = false;
+    cartCount = 0;
 
 
     mainNav: NavItem[] = [];
@@ -389,9 +400,13 @@ export class LayoutComponent {
     constructor(
       private authService: AuthService, 
       private router: Router,
-      private themeService: ThemeService
+      private themeService: ThemeService,
+      private cartService: CartService
     ) {
         this.themeService.theme$.subscribe(t => this.currentTheme = t);
+        this.cartService.cart$.subscribe(items => {
+            this.cartCount = items.reduce((sum, i) => sum + i.quantity, 0);
+        });
 
         // Subscribe to auth state to react immediately to login/logout
         this.authService.currentUser$.subscribe(user => {
@@ -444,9 +459,10 @@ export class LayoutComponent {
         } else {
             this.mainNav = [
                 { label: 'Dashboard', icon: '🏠', route: '/individual/dashboard' },
-                { label: 'AI Assistant', icon: '🤖', route: '/individual/ai-assistant' },
                 { label: 'Marketplace', icon: '💎', route: '/individual/catalog' },
-                { label: 'My Orders', icon: '🛒', route: '/individual/orders' },
+                { label: 'My Cart', icon: '🛒', route: '/cart' },
+                { label: 'My Orders', icon: '📦', route: '/my-orders' },
+                { label: 'AI Assistant', icon: '🤖', route: '/individual/ai-assistant' },
             ];
             this.mgmtNav = [];
         }

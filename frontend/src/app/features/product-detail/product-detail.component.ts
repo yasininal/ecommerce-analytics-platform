@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
-import { AuthService } from '../../core/auth/auth.service';
+import { CartService } from '../../core/services/cart.service';
 
 interface Product {
     id: number;
@@ -78,13 +78,12 @@ interface Review {
                   <span class="qty-val">{{ quantity }}</span>
                   <button class="qty-btn" (click)="quantity = quantity + 1">+</button>
                 </div>
-                <button class="primary-btn" (click)="purchaseNow()" [disabled]="isPurchasing">
-                  <span *ngIf="!isPurchasing">💳 Purchase Now</span>
-                  <span *ngIf="isPurchasing">Processing...</span>
+                <button class="primary-btn" (click)="addToCart()" [class.added]="addedToCart">
+                  <span *ngIf="!addedToCart">🛒 Add to Cart</span>
+                  <span *ngIf="addedToCart">✅ Added!</span>
                 </button>
-                <button class="secondary-btn">Add to Watchlist</button>
+                <a routerLink="/cart" class="secondary-btn" *ngIf="addedToCart">View Cart</a>
               </div>
-              <div *ngIf="paymentError" class="payment-error">⚠️ {{ paymentError }}</div>
             </div>
           </div>
 
@@ -206,12 +205,12 @@ export class ProductDetailComponent implements OnInit {
     product?: Product;
     reviews: Review[] = [];
     quantity = 1;
-    isPurchasing = false;
-    paymentError = '';
+    addedToCart = false;
     
     constructor(
         private route: ActivatedRoute,
-        private http: HttpClient
+        private http: HttpClient,
+        private cartService: CartService
     ) { }
 
     ngOnInit(): void {
@@ -226,32 +225,18 @@ export class ProductDetailComponent implements OnInit {
         }
     }
 
-    purchaseNow(): void {
-        if (!this.product || this.isPurchasing) return;
-        this.isPurchasing = true;
-        this.paymentError = '';
-
-        const baseUrl = window.location.origin;
-        const body = {
+    addToCart(): void {
+        if (!this.product) return;
+        this.cartService.addToCart({
+            productId: this.product.id,
             productName: this.product.name,
-            sku: this.product.sku,
             price: this.product.unitPrice,
             quantity: this.quantity,
-            successUrl: baseUrl + '/catalog',
-            cancelUrl: baseUrl + '/product/' + this.product.id
-        };
-
-        this.http.post<{sessionId: string, url: string}>('/api/payments/create-checkout-session', body)
-            .subscribe({
-                next: (res) => {
-                    // Redirect to Stripe Checkout
-                    window.location.href = res.url;
-                },
-                error: (err) => {
-                    this.isPurchasing = false;
-                    this.paymentError = err.error?.error || 'Payment initialization failed. Please try again.';
-                }
-            });
+            storeName: this.product.storeName,
+            categoryName: this.product.categoryName
+        });
+        this.addedToCart = true;
+        setTimeout(() => this.addedToCart = false, 3000);
     }
 
     getEmoji(cat: string): string {

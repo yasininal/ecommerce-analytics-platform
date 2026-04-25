@@ -14,16 +14,22 @@ import { AiAssistantComponent } from './features/ai-assistant/ai-assistant.compo
 import { SettingsComponent } from './features/settings/settings.component';
 import { CatalogComponent } from './features/catalog/catalog.component';
 import { ProductDetailComponent } from './features/product-detail/product-detail.component';
+import { CartComponent } from './features/cart/cart.component';
+import { MyOrdersComponent } from './features/my-orders/my-orders.component';
+import { PaymentSuccessComponent } from './features/payment-success/payment-success.component';
 import { authGuard } from './core/auth/auth.guard';
 
 export const routes: Routes = [
-    // ── PUBLIC ACCESSIBLE ROUTES (FIRST PRIORITY) ────
+    // ── PUBLIC ACCESSIBLE ROUTES ────
     {
         path: '',
         component: LayoutComponent,
         children: [
             { path: 'catalog', component: CatalogComponent },
             { path: 'catalog/:id', component: ProductDetailComponent },
+            { path: 'cart', component: CartComponent },
+            { path: 'payment-success', component: PaymentSuccessComponent },
+            { path: 'my-orders', component: MyOrdersComponent },
             { path: '', redirectTo: 'catalog', pathMatch: 'full' }
         ]
     },
