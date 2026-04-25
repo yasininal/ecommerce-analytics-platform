@@ -18,10 +18,6 @@ env/
 
 # Logs
 *.log
-docker_build_output.log
-
-# Temporary
-fix_db.py
 
 # Build/Compiled folders
 backend/target/
@@ -30,3 +26,10 @@ frontend/node_modules/
 frontend/.angular/
 frontend/coverage/
 ai-chatbot/venv/
+
+# Error dumps
+compile_errors.txt
+err.txt
+
+# Docker data
+db_data/

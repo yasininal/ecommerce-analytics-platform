@@ -1,11 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DashboardService, CorporateSummary } from '../dashboard.service';
+import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-corporate-dashboard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterModule],
   template: `
     <div class="page-content">
       <div class="welcome-header">
@@ -13,6 +14,9 @@ import { DashboardService, CorporateSummary } from '../dashboard.service';
           <h1 class="welcome-title">Store Dashboard 🏪</h1>
           <p class="welcome-sub" *ngIf="summary">{{ summary.storeName }} — mağazanızın bugünkü özeti</p>
         </div>
+        <a routerLink="/corporate/ai-assistant" class="ai-button">
+           <span>🤖</span> Talk to Data AI
+        </a>
       </div>
 
       <div class="kpi-grid" *ngIf="summary">
@@ -63,7 +67,15 @@ import { DashboardService, CorporateSummary } from '../dashboard.service';
     .chart-placeholder { height: 180px; display: flex; flex-direction: column; gap: 8px; }
     .chart-bars { flex: 1; display: flex; align-items: flex-end; gap: 10px; }
     .bar { flex: 1; background: linear-gradient(to top, #00c896, rgba(0,200,150,0.3)); border-radius: 4px 4px 0 0; min-height: 10%; }
-    .chart-labels { display: flex; justify-content: space-around; font-size: 11px; color: var(--text-muted); }
+    .chart-labels { display: justify-content: space-around; font-size: 11px; color: var(--text-muted); }
+
+    .ai-button {
+      display: flex; align-items: center; gap: 10px; background: linear-gradient(135deg, var(--accent), var(--accent-light));
+      color: white; padding: 12px 24px; border-radius: 99px; text-decoration: none; font-weight: 700; font-size: 14px;
+      box-shadow: 0 10px 20px rgba(124, 92, 252, 0.3); transition: 0.3s;
+    }
+    .ai-button:hover { transform: translateY(-3px); box-shadow: 0 15px 30px rgba(124, 92, 252, 0.4); }
+    .welcome-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px; }
   `]
 })
 export class CorporateDashboardComponent implements OnInit {

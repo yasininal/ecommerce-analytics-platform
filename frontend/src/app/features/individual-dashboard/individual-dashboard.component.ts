@@ -1,11 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DashboardService, IndividualSummary } from '../dashboard.service';
+import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-individual-dashboard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterModule],
   template: `
     <div class="page-content">
       <div class="welcome-header">
@@ -14,6 +15,9 @@ import { DashboardService, IndividualSummary } from '../dashboard.service';
           <h1 class="welcome-title" *ngIf="!summary">My Dashboard</h1>
           <p class="welcome-sub">Alışveriş geçmişiniz ve hesap bilgileriniz</p>
         </div>
+        <a routerLink="/individual/ai-assistant" class="ai-button">
+           <span>🤖</span> Talk to Data AI
+        </a>
       </div>
 
       <div class="kpi-grid" *ngIf="summary">
@@ -82,6 +86,14 @@ import { DashboardService, IndividualSummary } from '../dashboard.service';
     .activity-info { flex: 1; }
     .activity-title { font-size: 13px; font-weight: 600; color: var(--text-primary); }
     .activity-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+    .ai-button {
+      display: flex; align-items: center; gap: 10px; background: linear-gradient(135deg, var(--accent), var(--accent-light));
+      color: white; padding: 12px 24px; border-radius: 99px; text-decoration: none; font-weight: 700; font-size: 14px;
+      box-shadow: 0 10px 20px rgba(124, 92, 252, 0.3); transition: 0.3s;
+    }
+    .ai-button:hover { transform: translateY(-3px); box-shadow: 0 15px 30px rgba(124, 92, 252, 0.4); }
+    .welcome-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px; }
   `]
 })
 export class IndividualDashboardComponent implements OnInit {

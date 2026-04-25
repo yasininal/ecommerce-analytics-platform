@@ -26,6 +26,8 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/ecommerce_analytics?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=password
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY}
     depends_on:
       db:
         condition: service_healthy
@@ -45,8 +47,6 @@ services:
   chatbot:
     build: ./ai-chatbot
     container_name: python_chatbot
-    ports:
-      - "8000:8000"
     environment:
       - DB_HOST=db
       - DB_PORT=3306

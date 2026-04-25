@@ -26,9 +26,11 @@ class ChatRequest(BaseModel):
     role: str | None = None
     sessionId: str | None = None
 
+
 class ChatResponse(BaseModel):
     answer: str
     visualization_data: str | None = None
+    sql_query: str | None = None
     error: str | None = None
 
 # Initialize Graph Workflow
@@ -38,48 +40,40 @@ graph = build_workflow()
 def home():
     return {"status": "AI Chatbot Backend is running."}
 
+from super_agent import run_super_agent
+
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat_endpoint(request: ChatRequest):
-    print(f"Received message: {request.message}")
-    initial_state = {
-        "input_question": request.message,
-        "user_id": request.userId,
-        "user_role": request.role,
-        "session_id": request.sessionId,
-        "is_valid_query": None,
-        "sql_query": None,
-        "query_result": None,
-        "error": None,
-        "retry_count": 0,
-        "analysis_text": None,
-        "visualization_code": None,
-        "final_output": None
-    }
+    print(f"Received message: {request.message} from {request.userId} ({request.role})")
     
     try:
-        print("Invoking graph...")
         if not os.getenv("GOOGLE_API_KEY"):
             raise HTTPException(status_code=500, detail="GOOGLE_API_KEY environment variable not set")
             
-        config = {"configurable": {"thread_id": request.sessionId or "default_session"}}
-        final_state = await graph.ainvoke(initial_state, config=config)
-        print("Graph execution completed.")
-
-        # Check if rejected by guardrails or max retries SQL error
-        if final_state.get("is_valid_query") is False:
-            return ChatResponse(answer=final_state["error"], error=final_state["error"])
-            
-        if final_state.get("error"):
-            return ChatResponse(answer="Sorry, I could not fetch this data from the database at the moment.", error=final_state["error"])
+        result = await run_super_agent(
+            question=request.message,
+            user_id=request.userId or "GUEST",
+            role=request.role or "GUEST"
+        )
+        
+        if result.get("error") and result["error"] != "Rate Limit":
+            return ChatResponse(answer=result["answer"], error=result["error"])
 
         return ChatResponse(
-            answer=final_state["final_output"],
-            visualization_data=final_state["visualization_code"]
+            answer=result["answer"],
+            visualization_data=result.get("visualization_code"),
+            sql_query=result.get("sql")
         )
 
     except Exception as e:
         import traceback
         traceback.print_exc()
+        error_msg = str(e)
+        if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg:
+            return ChatResponse(
+                answer="⚠️ **API Quota Exceeded!** Please wait about 1 minute before asking the next question.",
+                error="Rate limit exceeded"
+            )
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":

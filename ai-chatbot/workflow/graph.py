@@ -1,11 +1,12 @@
 from langgraph.graph import StateGraph, END
 from agents.state import State
-from agents.guardrails_agent import guardrails_node
 from agents.sql_agent import sql_node
 from agents.run_sql_node import run_sql_node
 from agents.analysis_agent import analysis_node
 from agents.visualization_agent import visualization_node
 from agents.error_agent import error_node
+from agents.guardrails_agent import guardrails_node
+
 
 def guardrails_router(state: State):
     """Router to check if the question passed guardrails."""

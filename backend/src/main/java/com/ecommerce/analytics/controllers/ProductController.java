@@ -20,12 +20,20 @@ public class ProductController {
         private final com.ecommerce.analytics.repositories.CategoryRepository categoryRepository;
 
         @GetMapping
-        @PreAuthorize("hasRole('ADMIN')")
+        @PreAuthorize("permitAll()")
         public ResponseEntity<List<ProductDto>> getAllProducts() {
                 List<ProductDto> products = productRepository.findAll().stream()
                                 .map(this::convertToDto)
                                 .collect(Collectors.toList());
                 return ResponseEntity.ok(products);
+        }
+
+        @GetMapping("/{id}")
+        @PreAuthorize("permitAll()")
+        public ResponseEntity<ProductDto> getProductById(@PathVariable Long id) {
+            com.ecommerce.analytics.entities.Product product = productRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+            return ResponseEntity.ok(convertToDto(product));
         }
 
         @GetMapping("/store/{storeId}")
@@ -71,6 +79,9 @@ public class ProductController {
                                 .unitPrice(p.getUnitPrice().doubleValue())
                                 .categoryName(p.getCategory() != null ? p.getCategory().getName() : "Uncategorized")
                                 .storeName(p.getStore().getName())
+                                .description(p.getDescription())
+                                .imageUrl(p.getImageUrl())
+                                .stockQuantity(p.getStockQuantity())
                                 .build();
         }
 
@@ -78,6 +89,9 @@ public class ProductController {
                 p.setName(dto.getName());
                 p.setSku(dto.getSku());
                 p.setUnitPrice(java.math.BigDecimal.valueOf(dto.getUnitPrice()));
+                p.setDescription(dto.getDescription());
+                p.setImageUrl(dto.getImageUrl());
+                p.setStockQuantity(dto.getStockQuantity() != null ? dto.getStockQuantity() : 0);
                 
                 if (dto.getCategoryName() != null) {
                         p.setCategory(categoryRepository.findByName(dto.getCategoryName()).orElse(null));

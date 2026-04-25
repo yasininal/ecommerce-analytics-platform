@@ -30,6 +30,16 @@ public class Product {
     @Column(nullable = false)
     private String name;
 
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
+    @Column(name = "image_url")
+    private String imageUrl;
+
+    @Builder.Default
+    @Column(name = "stock_quantity", nullable = false)
+    private Integer stockQuantity = 0;
+
     @Column(name = "unit_price", nullable = false, precision = 10, scale = 2)
     private BigDecimal unitPrice;
 }

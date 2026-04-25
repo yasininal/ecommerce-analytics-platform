@@ -14,3 +14,4 @@ class State(TypedDict):
     needs_graph: Optional[bool]
     visualization_code: Optional[str] # To hold Plotly JSON or render data
     final_output: Optional[str]
+

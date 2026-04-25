@@ -45,6 +45,19 @@ public class ReviewController {
                 return ResponseEntity.ok(reviews);
         }
 
+        @GetMapping("/product/{productId}")
+        public ResponseEntity<List<ReviewDto>> getReviewsByProduct(@PathVariable Long productId) {
+                List<ReviewDto> reviews = reviewRepository.findByProductId(productId).stream()
+                                .map(r -> new ReviewDto(
+                                                r.getId(),
+                                                r.getUser().getEmail(),
+                                                r.getProduct().getName(),
+                                                r.getStarRating(),
+                                                r.getSentiment().name()))
+                                .collect(Collectors.toList());
+                return ResponseEntity.ok(reviews);
+        }
+
         @DeleteMapping("/{id}")
         @PreAuthorize("hasRole('ADMIN')")
         public ResponseEntity<Void> deleteReview(@PathVariable Long id) {

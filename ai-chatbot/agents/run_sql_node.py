@@ -3,10 +3,26 @@ from core.database import execute_sql
 
 async def run_sql_node(state: State) -> State:
     query = state.get("sql_query")
-    print(f"Executing SQL: {query}", flush=True)
     if not query:
         state["error"] = "No SQL query provided."
         return state
+        
+    # SECURITY: Strictly Read-Only check and Anti-Tautology
+    forbidden_keywords = ["DROP", "DELETE", "UPDATE", "INSERT", "ALTER", "CREATE", "TRUNCATE", "GRANT", "REVOKE", "1=1", "1 = 1", "--", "/*"]
+    query_upper = query.upper().strip()
+    
+    if not query_upper.startswith("SELECT"):
+        state["error"] = "SECURITY_VIOLATION: Only SELECT queries are permitted."
+        state["is_valid_query"] = False
+        return state
+        
+    for kw in forbidden_keywords:
+        if kw in query_upper:
+            state["error"] = f"SECURITY_VIOLATION: Forbidden keyword '{kw}' detected."
+            state["is_valid_query"] = False
+            return state
+
+    print(f"Executing SQL: {query}", flush=True)
         
     try:
         results = execute_sql(query)

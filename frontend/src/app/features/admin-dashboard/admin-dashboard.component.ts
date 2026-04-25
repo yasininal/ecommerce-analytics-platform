@@ -1,11 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DashboardService, AdminSummary } from '../dashboard.service';
+import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterModule],
   template: `
     <div class="page-content">
       <!-- Welcome Header -->
@@ -14,6 +15,9 @@ import { DashboardService, AdminSummary } from '../dashboard.service';
           <h1 class="welcome-title">Welcome back, Admin! 👋</h1>
           <p class="welcome-sub">Here's what's happening with your store today.</p>
         </div>
+        <a routerLink="/admin/ai-assistant" class="ai-button">
+           <span>🤖</span> Talk to Data AI
+        </a>
       </div>
 
       <!-- KPI Cards -->
@@ -167,6 +171,12 @@ import { DashboardService, AdminSummary } from '../dashboard.service';
       font-weight: 500;
       color: var(--text-muted);
     }
+    .ai-button {
+      display: flex; align-items: center; gap: 10px; background: linear-gradient(135deg, var(--accent), var(--accent-light));
+      color: white; padding: 12px 24px; border-radius: 99px; text-decoration: none; font-weight: 700; font-size: 14px;
+      box-shadow: 0 10px 20px rgba(241, 100, 30, 0.3); transition: 0.3s;
+    }
+    .ai-button:hover { transform: translateY(-3px); box-shadow: 0 15px 30px rgba(241, 100, 30, 0.4); }
   `]
 })
 export class AdminDashboardComponent implements OnInit {

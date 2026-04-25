@@ -16,12 +16,13 @@ interface NavItem {
     standalone: true,
     imports: [CommonModule, RouterModule, RouterLink, RouterLinkActive],
     template: `
-    <div class="app-shell">
+    <div class="app-shell" [class.no-sidebar]="!isLoggedIn">
       <!-- Sidebar Overlay (mobile) -->
       <div class="sidebar-overlay" [class.visible]="sidebarOpen" (click)="closeSidebar()"></div>
 
-      <!-- Sidebar -->
-      <aside class="sidebar" [class.open]="sidebarOpen">
+      <!-- Sidebar - Only for Logged In users -->
+      <aside class="sidebar" [class.open]="sidebarOpen" *ngIf="isLoggedIn">
+
         <div class="sidebar-logo">
           <div class="logo-mark">🛍️</div>
           <span class="logo-name">DataPulse</span>
@@ -63,21 +64,27 @@ interface NavItem {
       <div class="main-area">
         <header class="top-bar">
           <div class="top-bar-left">
-            <button class="hamburger-btn" (click)="toggleSidebar()">
+            <button class="hamburger-btn" (click)="toggleSidebar()" *ngIf="isLoggedIn">
               <span class="hamburger-line"></span>
               <span class="hamburger-line"></span>
               <span class="hamburger-line"></span>
             </button>
-            <h2 class="page-title">{{ pageTitle }}</h2>
+            <h1 class="logo-placeholder" *ngIf="!isLoggedIn" (click)="goToHome()" style="cursor:pointer">📊 DataPulse</h1>
+            <h2 class="page-title" *ngIf="isLoggedIn">{{ pageTitle }}</h2>
           </div>
           <div class="top-bar-right">
             <button class="theme-toggle-btn" (click)="toggleTheme()" [title]="currentTheme === 'light' ? 'Dark Mode' : 'Light Mode'">
               {{ currentTheme === 'light' ? '🌙' : '☀️' }}
             </button>
-            <div class="user-pill">
+            <!-- User is Logged In -->
+            <div class="user-pill" *ngIf="isLoggedIn">
+
               <div class="user-avatar">{{ userInitial }}</div>
               <span class="user-email">{{ userEmail }}</span>
             </div>
+            
+            <!-- User is Guest -->
+            <button class="btn btn-primary" *ngIf="!isLoggedIn" (click)="goToLogin()">Sign In</button>
           </div>
         </header>
 
@@ -363,6 +370,8 @@ interface NavItem {
       overflow-x: hidden;
       background: var(--bg-base);
     }
+    
+    .logo-placeholder { font-size: 20px; font-weight: 800; background: linear-gradient(135deg, #fff, var(--accent-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
   `]
 })
 export class LayoutComponent {
@@ -371,6 +380,8 @@ export class LayoutComponent {
     pageTitle = 'DataPulse Analytics';
     currentTheme = 'light';
     sidebarOpen = false;
+    isLoggedIn = false;
+
 
     mainNav: NavItem[] = [];
     mgmtNav: NavItem[] = [];
@@ -382,19 +393,25 @@ export class LayoutComponent {
     ) {
         this.themeService.theme$.subscribe(t => this.currentTheme = t);
 
-        const token = localStorage.getItem('token');
-        const roles = JSON.parse(localStorage.getItem('roles') || '[]');
-
-        // Parse email from token
-        if (token) {
-            try {
-                const payload = JSON.parse(atob(token.split('.')[1]));
-                this.userEmail = payload.sub || '';
+        // Subscribe to auth state to react immediately to login/logout
+        this.authService.currentUser$.subscribe(user => {
+            this.isLoggedIn = !!user;
+            if (user) {
+                this.userEmail = user.sub || localStorage.getItem('userEmail') || '';
                 this.userInitial = this.userEmail.charAt(0).toUpperCase();
-            } catch { }
-        }
+                this.updateNavigation();
+            } else {
+                this.userEmail = '';
+                this.userInitial = 'U';
+                this.mainNav = [];
+                this.mgmtNav = [];
+            }
+        });
+    }
 
-        // Set nav based on role
+    private updateNavigation() {
+        const roles = JSON.parse(localStorage.getItem('roles') || '[]');
+        
         if (roles.includes('ROLE_ADMIN')) {
             this.mainNav = [
                 { label: 'Dashboard', icon: '🏠', route: '/admin/dashboard' },
@@ -402,6 +419,7 @@ export class LayoutComponent {
                 { label: 'Analytics', icon: '📈', route: '/admin/analytics' },
                 { label: 'Orders', icon: '🛒', route: '/admin/orders' },
                 { label: 'Products', icon: '📦', route: '/admin/products' },
+                { label: 'Marketplace', icon: '💎', route: '/admin/catalog' },
             ];
             this.mgmtNav = [
                 { label: 'Customers', icon: '👥', route: '/admin/customers' },
@@ -416,6 +434,7 @@ export class LayoutComponent {
                 { label: 'Analytics', icon: '📈', route: '/corporate/analytics' },
                 { label: 'Orders', icon: '🛒', route: '/corporate/orders' },
                 { label: 'Products', icon: '📦', route: '/corporate/products' },
+                { label: 'Marketplace', icon: '💎', route: '/corporate/catalog' },
             ];
             this.mgmtNav = [
                 { label: 'Store Settings', icon: '⚙️', route: '/corporate/settings' },
@@ -426,6 +445,7 @@ export class LayoutComponent {
             this.mainNav = [
                 { label: 'Dashboard', icon: '🏠', route: '/individual/dashboard' },
                 { label: 'AI Assistant', icon: '🤖', route: '/individual/ai-assistant' },
+                { label: 'Marketplace', icon: '💎', route: '/individual/catalog' },
                 { label: 'My Orders', icon: '🛒', route: '/individual/orders' },
             ];
             this.mgmtNav = [];
@@ -444,8 +464,18 @@ export class LayoutComponent {
         this.themeService.toggleTheme();
     }
 
+    goToLogin() {
+        this.router.navigate(['/login']);
+    }
+
+    goToHome() {
+        this.router.navigate(['/catalog']);
+    }
+
     logout() {
         this.authService.logout();
+        this.isLoggedIn = false;
+        this.sidebarOpen = false;
         this.router.navigate(['/login']);
     }
 }

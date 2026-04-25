@@ -15,4 +15,7 @@ public class ProductDto {
     private Double unitPrice;
     private String categoryName;
     private String storeName;
+    private String description;
+    private String imageUrl;
+    private Integer stockQuantity;
 }

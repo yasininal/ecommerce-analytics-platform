@@ -86,6 +86,17 @@ export class AuthService {
     return id ? parseInt(id, 10) : null;
   }
 
+  getUserRole(): string {
+    const rolesStr = localStorage.getItem('roles');
+    if (!rolesStr) return 'GUEST';
+    try {
+      const roles = JSON.parse(rolesStr);
+      return roles.length > 0 ? roles[0] : 'GUEST';
+    } catch {
+      return 'GUEST';
+    }
+  }
+
   public loadUserFromToken(): void {
     const token = this.token;
     if (token) {

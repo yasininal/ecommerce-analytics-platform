@@ -12,12 +12,25 @@ import { ShipmentsComponent } from './features/shipments/shipments.component';
 import { ReviewsComponent } from './features/reviews/reviews.component';
 import { AiAssistantComponent } from './features/ai-assistant/ai-assistant.component';
 import { SettingsComponent } from './features/settings/settings.component';
+import { CatalogComponent } from './features/catalog/catalog.component';
+import { ProductDetailComponent } from './features/product-detail/product-detail.component';
 import { authGuard } from './core/auth/auth.guard';
 
 export const routes: Routes = [
+    // ── PUBLIC ACCESSIBLE ROUTES (FIRST PRIORITY) ────
+    {
+        path: '',
+        component: LayoutComponent,
+        children: [
+            { path: 'catalog', component: CatalogComponent },
+            { path: 'catalog/:id', component: ProductDetailComponent },
+            { path: '', redirectTo: 'catalog', pathMatch: 'full' }
+        ]
+    },
+
     { path: 'login', component: LoginComponent },
 
-    // ── Admin Routes ──────────────────────────────────
+    // ── PROTECTED ROUTES (BY ROLE) ───────────────────
     {
         path: 'admin',
         component: LayoutComponent,
@@ -32,12 +45,13 @@ export const routes: Routes = [
             { path: 'customers', component: CustomersComponent },
             { path: 'shipments', component: ShipmentsComponent },
             { path: 'reviews', component: ReviewsComponent },
+            { path: 'catalog', component: CatalogComponent },
+            { path: 'catalog/:id', component: ProductDetailComponent },
             { path: 'settings', component: SettingsComponent },
             { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
         ]
     },
 
-    // ── Corporate Routes ──────────────────────────────
     {
         path: 'corporate',
         component: LayoutComponent,
@@ -51,12 +65,13 @@ export const routes: Routes = [
             { path: 'products', component: ProductsComponent },
             { path: 'shipments', component: ShipmentsComponent },
             { path: 'reviews', component: ReviewsComponent },
+            { path: 'catalog', component: CatalogComponent },
+            { path: 'catalog/:id', component: ProductDetailComponent },
             { path: 'settings', component: SettingsComponent },
-            { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
+            { path: 'dashboard', redirectTo: 'dashboard', pathMatch: 'full' }
         ]
     },
 
-    // ── Individual Routes ─────────────────────────────
     {
         path: 'individual',
         component: LayoutComponent,
@@ -66,10 +81,11 @@ export const routes: Routes = [
             { path: 'dashboard', component: IndividualDashboardComponent },
             { path: 'ai-assistant', component: AiAssistantComponent },
             { path: 'orders', component: OrdersComponent },
+            { path: 'catalog', component: CatalogComponent },
+            { path: 'catalog/:id', component: ProductDetailComponent },
             { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
         ]
     },
 
-    { path: '', redirectTo: '/login', pathMatch: 'full' },
-    { path: '**', redirectTo: '/login' }
+    { path: '**', redirectTo: '/catalog' }
 ];
