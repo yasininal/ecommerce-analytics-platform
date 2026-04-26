@@ -2,14 +2,15 @@ package com.ecommerce.analytics.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
+import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "reviews")
+@Table(name = "wishlists")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Review {
+public class Wishlist {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,17 +24,11 @@ public class Review {
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
-    @Column(name = "star_rating", nullable = false)
-    private Integer starRating;
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
 
-    @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "ENUM('POSITIVE', 'NEUTRAL', 'NEGATIVE')")
-    private Sentiment sentiment;
-
-    @Column(columnDefinition = "TEXT")
-    private String comment;
-
-    public enum Sentiment {
-        POSITIVE, NEUTRAL, NEGATIVE
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
     }
 }

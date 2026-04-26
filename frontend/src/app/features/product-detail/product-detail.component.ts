@@ -4,6 +4,7 @@ import { ActivatedRoute, RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { CartService } from '../../core/services/cart.service';
+import { AuthService } from '../../core/auth/auth.service';
 
 interface Product {
     id: number;
@@ -23,6 +24,7 @@ interface Review {
     productName: string;
     starRating: number;
     sentiment: string;
+    comment: string;
 }
 
 @Component({
@@ -100,13 +102,25 @@ interface Review {
                     <span class="rev-user">{{ rev.userEmail }}</span>
                     <span class="rev-stars">{{ '★'.repeat(rev.starRating) }}{{ '☆'.repeat(5 - rev.starRating) }}</span>
                   </div>
-                  <div class="rev-sentiment" [ngClass]="rev.sentiment.toLowerCase()">
+                  <div class="rev-sentiment" [ngClass]="rev.sentiment?.toLowerCase()">
                     AI Sentiment: {{ rev.sentiment }}
                   </div>
+                  <p class="rev-comment" *ngIf="rev.comment">{{ rev.comment }}</p>
                 </div>
               </div>
               <div *ngIf="reviews.length === 0" class="no-reviews">
                 No reviews yet for this product.
+              </div>
+
+              <!-- Write Review Form -->
+              <div class="write-review-box" *ngIf="isIndividual">
+                 <h4 style="margin-top:20px; font-weight:700;">Write a Review</h4>
+                 <div class="star-rating-select">
+                    <span *ngFor="let s of [1,2,3,4,5]" (click)="newReview.starRating = s" 
+                          [class.active]="s <= newReview.starRating">★</span>
+                 </div>
+                 <textarea [(ngModel)]="newReview.comment" placeholder="What did you think about this product?" class="review-input"></textarea>
+                 <button class="primary-btn submit-rev-btn" (click)="submitReview()" [disabled]="newReview.starRating === 0 || !newReview.comment">Submit Review</button>
               </div>
             </div>
             
@@ -199,6 +213,13 @@ interface Review {
     .rev-sentiment.negative { background: rgba(248, 113, 113, 0.1); color: #f87171; }
     .rev-sentiment.neutral { background: rgba(156, 163, 175, 0.1); color: #9ca3af; }
     .no-reviews { color: var(--text-muted); font-style: italic; margin-top: 16px; }
+    .rev-comment { font-size: 14px; margin-top: 10px; line-height: 1.5; color: var(--text-primary); }
+    
+    .write-review-box { background: var(--bg-elevated); padding: 20px; border-radius: 16px; border: 1px solid var(--border); margin-top: 24px; }
+    .star-rating-select { font-size: 24px; cursor: pointer; color: var(--border); margin-bottom: 12px; }
+    .star-rating-select span.active { color: var(--accent); }
+    .review-input { width: 100%; height: 80px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px; color: var(--text-primary); margin-bottom: 12px; resize: none; font-family: inherit; }
+    .submit-rev-btn { padding: 12px 20px; font-size: 13px; width: auto; }
   `]
 })
 export class ProductDetailComponent implements OnInit {
@@ -206,12 +227,17 @@ export class ProductDetailComponent implements OnInit {
     reviews: Review[] = [];
     quantity = 1;
     addedToCart = false;
+    isIndividual = false;
+    newReview = { starRating: 0, comment: '' };
     
     constructor(
         private route: ActivatedRoute,
         private http: HttpClient,
-        private cartService: CartService
-    ) { }
+        private cartService: CartService,
+        private authService: AuthService
+    ) { 
+        this.isIndividual = this.authService.hasRole('ROLE_INDIVIDUAL');
+    }
 
     ngOnInit(): void {
         const id = this.route.snapshot.paramMap.get('id');
@@ -242,5 +268,21 @@ export class ProductDetailComponent implements OnInit {
     getEmoji(cat: string): string {
         const map: any = { 'Electronics': '💻', 'Fashion': '👗', 'Home': '🏠', 'Books': '📚' };
         return map[cat] || '📦';
+    }
+
+    submitReview() {
+        if (!this.product || this.newReview.starRating === 0) return;
+        const payload = {
+            productId: this.product.id,
+            userId: this.authService.getUserId(),
+            starRating: this.newReview.starRating,
+            comment: this.newReview.comment
+        };
+        this.http.post<Review>('/api/reviews', payload).subscribe({
+            next: (rev) => {
+                this.reviews.unshift(rev);
+                this.newReview = { starRating: 0, comment: '' };
+            }
+        });
     }
 }

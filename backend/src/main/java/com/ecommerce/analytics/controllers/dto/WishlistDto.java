@@ -1,17 +1,19 @@
 package com.ecommerce.analytics.controllers.dto;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ReviewDto {
+@Builder
+public class WishlistDto {
     private Long id;
-    private String userEmail;
+    private Long productId;
     private String productName;
-    private Integer starRating;
-    private String sentiment;
-    private String comment;
+    private Double productPrice;
+    private String productImageUrl;
+    private String storeName;
 }

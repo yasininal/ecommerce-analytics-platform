@@ -4,6 +4,8 @@ import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { CartService } from '../../core/services/cart.service';
+import { WishlistService } from '../../core/services/wishlist.service';
+import { AuthService } from '../../core/auth/auth.service';
 
 export interface Product {
     id: number;
@@ -73,6 +75,10 @@ export interface Product {
                <div class="card-overlay">
                  <button class="view-btn">View Details →</button>
                </div>
+               <button class="wishlist-btn" (click)="toggleWishlist($event, p.id)" *ngIf="isIndividual">
+                  <span *ngIf="!wishlistedIds.has(p.id)">🤍</span>
+                  <span *ngIf="wishlistedIds.has(p.id)">❤️</span>
+               </button>
                <div class="stock-badge" *ngIf="p.stockQuantity < 10">Only {{ p.stockQuantity }} left!</div>
             </div>
             <div class="card-body">
@@ -201,6 +207,8 @@ export interface Product {
     .product-card:hover .card-overlay { opacity: 1; }
     .view-btn { padding: 10px 20px; background: white; color: black; border-radius: 12px; font-weight: 700; border: none; font-size: 13px; transform: translateY(10px); transition: 0.3s; cursor: pointer; }
     .product-card:hover .view-btn { transform: translateY(0); }
+    .wishlist-btn { position: absolute; top: 12px; left: 12px; background: rgba(255,255,255,0.2); backdrop-filter: blur(4px); border: none; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; z-index: 2; font-size: 16px; }
+    .wishlist-btn:hover { transform: scale(1.1); background: rgba(255,255,255,0.4); }
 
     .card-body { padding: 20px; }
     .cat-pill { font-size: 10px; font-weight: 800; color: var(--accent-light); text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.05em; }
@@ -244,10 +252,42 @@ export class CatalogComponent implements OnInit {
     searchQuery = '';
     loading = true;
     addedIds = new Set<number>();
+    wishlistedIds = new Set<number>();
+    isIndividual = false;
 
-    constructor(private http: HttpClient, private router: Router, private cartService: CartService) { }
+    constructor(
+        private http: HttpClient, 
+        private router: Router, 
+        private cartService: CartService,
+        private wishlistService: WishlistService,
+        private authService: AuthService
+    ) { 
+        this.isIndividual = this.authService.hasRole('ROLE_INDIVIDUAL');
+    }
 
-    ngOnInit() { this.loadProducts(); }
+    ngOnInit() { 
+        this.loadProducts(); 
+        if (this.isIndividual) {
+            this.loadWishlist();
+        }
+    }
+    
+    loadWishlist() {
+        this.wishlistService.getUserWishlist().subscribe(list => {
+            list.forEach(w => this.wishlistedIds.add(w.productId));
+        });
+    }
+
+    toggleWishlist(event: Event, productId: number) {
+        event.stopPropagation();
+        this.wishlistService.toggleWishlist(productId).subscribe(() => {
+            if (this.wishlistedIds.has(productId)) {
+                this.wishlistedIds.delete(productId);
+            } else {
+                this.wishlistedIds.add(productId);
+            }
+        });
+    }
 
     loadProducts() {
         this.http.get<Product[]>('/api/products').subscribe({
