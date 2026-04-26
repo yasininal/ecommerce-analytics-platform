@@ -82,6 +82,7 @@ CREATE TABLE reviews (
     product_id BIGINT NOT NULL,
     star_rating INT NOT NULL CHECK (star_rating BETWEEN 1 AND 5),
     sentiment ENUM('POSITIVE', 'NEUTRAL', 'NEGATIVE'),
+    comment TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE

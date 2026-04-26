@@ -460,6 +460,7 @@ export class LayoutComponent {
             this.mainNav = [
                 { label: 'Dashboard', icon: '🏠', route: '/individual/dashboard' },
                 { label: 'Marketplace', icon: '💎', route: '/individual/catalog' },
+                { label: 'My Favorites', icon: '❤️', route: '/individual/favorites' },
                 { label: 'My Cart', icon: '🛒', route: '/cart' },
                 { label: 'My Orders', icon: '📦', route: '/my-orders' },
                 { label: 'AI Assistant', icon: '🤖', route: '/individual/ai-assistant' },
