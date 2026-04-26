@@ -204,7 +204,9 @@ export class CartComponent implements OnInit {
             this.items = items;
             this.recalculateDiscount();
         });
-        this.loadAddresses();
+        if (this.authService.token) {
+            this.loadAddresses();
+        }
     }
 
     loadAddresses() {

@@ -11,9 +11,8 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
     return next(req).pipe(
         catchError((error: HttpErrorResponse) => {
             if ([401, 403].includes(error.status)) {
-                // auto logout if 401 response returned from api
+                // Just clear storage and reload to catalog as guest
                 authService.logout();
-                router.navigate(['/login']);
             }
             return throwError(() => error);
         })

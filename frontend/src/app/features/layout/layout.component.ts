@@ -489,6 +489,7 @@ export class LayoutComponent {
     }
 
     loadNotificationCount() {
+        if (!this.isLoggedIn) return;
         this.dashboardService.getUnreadNotificationCount().subscribe(c => this.unreadCount = c);
     }
 
@@ -500,6 +501,7 @@ export class LayoutComponent {
     }
 
     loadNotifications() {
+        if (!this.isLoggedIn) return;
         this.dashboardService.getNotifications().subscribe(list => {
             this.notifications = list;
             this.loadNotificationCount();
@@ -526,10 +528,6 @@ export class LayoutComponent {
                 { label: 'Orders', icon: '🛒', route: '/admin/orders' },
                 { label: 'Products', icon: '📦', route: '/admin/products' },
                 { label: 'Marketplace', icon: '💎', route: '/admin/catalog' },
-                { label: 'My Favorites', icon: '❤️', route: '/admin/favorites' },
-                { label: 'My Cart', icon: '🛒', route: '/cart' },
-                { label: 'My Orders', icon: '📦', route: '/my-orders' },
-                { label: 'My Reviews', icon: '📝', route: '/admin/reviews' },
             ];
             this.mgmtNav = [
                 { label: 'Customers', icon: '👥', route: '/admin/customers' },
@@ -545,10 +543,6 @@ export class LayoutComponent {
                 { label: 'Orders', icon: '🛒', route: '/corporate/orders' },
                 { label: 'Products', icon: '📦', route: '/corporate/products' },
                 { label: 'Marketplace', icon: '💎', route: '/corporate/catalog' },
-                { label: 'My Favorites', icon: '❤️', route: '/corporate/favorites' },
-                { label: 'My Cart', icon: '🛒', route: '/cart' },
-                { label: 'My Orders', icon: '📦', route: '/my-orders' },
-                { label: 'My Reviews', icon: '📝', route: '/corporate/reviews' },
             ];
             this.mgmtNav = [
                 { label: 'Store Settings', icon: '⚙️', route: '/corporate/settings' },
@@ -596,8 +590,6 @@ export class LayoutComponent {
 
     logout() {
         this.authService.logout();
-        this.isLoggedIn = false;
         this.sidebarOpen = false;
-        this.router.navigate(['/login']);
     }
 }

@@ -2,6 +2,7 @@ import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { jwtDecode } from 'jwt-decode';
+import { Router } from '@angular/router';
 
 export interface AuthResponse {
   token: string;
@@ -20,7 +21,9 @@ export class AuthService {
   private currentUserSubject = new BehaviorSubject<any>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
 
-  constructor(private http: HttpClient) {
+  private isLoggingOut = false;
+
+  constructor(private http: HttpClient, private router: Router) {
     this.loadUserFromToken();
   }
 
@@ -57,16 +60,33 @@ export class AuthService {
   }
 
   logout(): void {
+    if (this.isLoggingOut) return;
+    this.isLoggingOut = true;
+
     const rToken = this.getRefreshToken();
     const userId = this.getUserId();
+    
+    // 1. Clear state IMMEDIATELY
+    this.clearStorage();
+
+    // 2. Fire and forget logout API (if we have tokens)
     if (rToken && userId) {
       this.http.post(`${this.apiUrl}/logout`, { userId }).subscribe({
-        next: () => this.clearStorage(),
-        error: () => this.clearStorage()
+          next: () => { 
+            this.isLoggingOut = false;
+            console.log('Backend logout success');
+          },
+          error: () => {
+            this.isLoggingOut = false;
+            console.error('Backend logout failed');
+          }
       });
     } else {
-      this.clearStorage();
+      this.isLoggingOut = false;
     }
+
+    // 3. Navigate to catalog using Router (No hard refresh)
+    this.router.navigate(['/catalog']);
   }
 
   private clearStorage() {
@@ -74,6 +94,7 @@ export class AuthService {
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('roles');
     localStorage.removeItem('userId');
+    localStorage.removeItem('cart');
     this.currentUserSubject.next(null);
   }
 

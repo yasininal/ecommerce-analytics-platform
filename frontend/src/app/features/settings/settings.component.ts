@@ -69,8 +69,8 @@ import { DashboardService, AddressData } from '../dashboard.service';
         </div>
       </div>
 
-      <!-- Address Management -->
-      <div class="card" style="margin-top: 24px;">
+      <!-- Address Management - Not for Admin to keep it clean -->
+      <div class="card" *ngIf="!isAdmin" style="margin-top: 24px;">
         <div class="card-header">
            <h3 style="margin:0">My Saved Addresses 📍</h3>
            <button class="btn btn-primary btn-sm" (click)="showAddressForm = !showAddressForm">

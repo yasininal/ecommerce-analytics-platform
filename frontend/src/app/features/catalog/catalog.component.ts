@@ -239,15 +239,7 @@ import { DashboardService, ProductData } from '../dashboard.service';
 export class CatalogComponent implements OnInit {
     products: ProductData[] = [];
     filteredProducts: ProductData[] = [];
-    categories = [
-        { id: null as any, name: 'All Products', emoji: '🏠' },
-        { id: 1, name: 'Smartphones', emoji: '📱' },
-        { id: 2, name: 'Laptops', emoji: '💻' },
-        { id: 3, name: 'Accessories', emoji: '🎧' },
-        { id: 4, name: 'Clothing', emoji: '👕' },
-        { id: 5, name: 'Shoes', emoji: '👟' },
-        { id: 6, name: 'Bags', emoji: '👜' },
-    ];
+    categories: any[] = [];
     
     filters = {
         categoryId: null as number | null,
@@ -273,13 +265,25 @@ export class CatalogComponent implements OnInit {
     }
 
     ngOnInit() { 
+        this.loadCategories();
         this.applyFilters();
         if (this.authService.token) {
             this.loadWishlist();
         }
     }
+
+    loadCategories() {
+        this.dashboardService.getCategories().subscribe(list => {
+            const all = { id: null, name: 'All Products', emoji: '🏠' };
+            this.categories = [all, ...list.map(c => ({
+                ...c,
+                emoji: this.getEmoji(c.name)
+            }))];
+        });
+    }
     
     loadWishlist() {
+        if (!this.authService.token) return; // Don't load if guest
         this.wishlistService.getUserWishlist().subscribe(list => {
             this.wishlistedIds = new Set(list.map(w => w.productId));
         });

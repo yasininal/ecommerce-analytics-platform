@@ -160,6 +160,11 @@ export class DashboardService {
 
     // Addresses
     getAddresses(): Observable<AddressData[]> { return this.http.get<AddressData[]>(`${this.baseApiUrl}/addresses`); }
+
+    getCategories(): Observable<any[]> {
+        return this.http.get<any[]>('/api/categories');
+    }
+
     addAddress(address: AddressData): Observable<AddressData> { return this.http.post<AddressData>(`${this.baseApiUrl}/addresses`, address); }
     deleteAddress(id: number): Observable<void> { return this.http.delete<void>(`${this.baseApiUrl}/addresses/${id}`); }
 

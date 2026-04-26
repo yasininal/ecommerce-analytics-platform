@@ -29,7 +29,8 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     answer: str
-    visualization_data: str | None = None
+    visualization_code: str | None = None
+    chart_type: str | None = None
     sql_query: str | None = None
     error: str | None = None
 
@@ -61,7 +62,8 @@ async def chat_endpoint(request: ChatRequest):
 
         return ChatResponse(
             answer=result["answer"],
-            visualization_data=result.get("visualization_code"),
+            visualization_code=result.get("visualization_code"),
+            chart_type=result.get("chart_type"),
             sql_query=result.get("sql")
         )
 

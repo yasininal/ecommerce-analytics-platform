@@ -80,6 +80,17 @@ interface ChatResponse {
                           </div>
                        </div>
                     </div>
+
+                    <!-- LINE CHART (SVG) -->
+                    <div *ngIf="msg.chartType === 'line'" class="dynamic-chart line-chart-container">
+                       <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" class="line-svg">
+                          <path [attr.d]="getLinePath(msg.chartData)" fill="none" stroke="var(--accent)" stroke-width="2" class="line-path" />
+                          <circle *ngFor="let p of getLinePoints(msg.chartData)" [attr.cx]="p.x" [attr.cy]="p.y" r="2" fill="white" stroke="var(--accent)" stroke-width="1" />
+                       </svg>
+                       <div class="line-labels">
+                          <div *ngFor="let item of getChartItems(msg.chartData)" class="l-label">{{ getChartLabel(item) }}</div>
+                       </div>
+                    </div>
                  </div>
 
                  <!-- SQL Block -->
@@ -183,6 +194,13 @@ interface ChatResponse {
     .gr-val { flex: 1; color: var(--text-primary); font-weight: 600; }
     .error-text { color: #ef4444; }
     .gr-footer { margin: 0; padding: 12px 16px; background: rgba(239, 68, 68, 0.1); font-size: 12px; color: var(--text-primary); font-weight: 500; border-top: 1px solid rgba(239, 68, 68, 0.2); }
+
+    .line-chart-container { position: relative; width: 100%; padding-bottom: 20px; }
+    .line-svg { height: 120px; filter: drop-shadow(0 10px 15px rgba(241,100,30,0.2)); overflow: visible; }
+    .line-labels { display: flex; justify-content: space-between; margin-top: 15px; }
+    .l-label { font-size: 9px; color: var(--text-muted); transform: rotate(-30deg); transform-origin: top left; }
+    .line-path { stroke-dasharray: 500; stroke-dashoffset: 500; animation: draw 2s forwards; }
+    @keyframes draw { to { stroke-dashoffset: 0; } }
 
     .input-container { padding: 40px 60px; background: linear-gradient(0deg, var(--bg-base) 0%, transparent 100%); }
     .input-bar { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 20px; padding: 10px 10px 10px 24px; display: flex; align-items: center; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
@@ -311,12 +329,22 @@ export class AiAssistantComponent {
     }
 
     getChartValue(item: any): number {
-        const key = Object.keys(item).find(k => typeof item[k] === 'number');
-        return key ? item[key] : 0;
+        // Find the first key that has a numeric value or can be parsed as a number
+        const key = Object.keys(item).find(k => {
+            const val = item[k];
+            return typeof val === 'number' || (!isNaN(parseFloat(val)) && isFinite(val));
+        });
+        if (!key) return 0;
+        const val = item[key];
+        return typeof val === 'number' ? val : parseFloat(val);
     }
     
     getChartLabel(item: any): string {
-        const key = Object.keys(item).find(k => typeof item[k] === 'string');
+        // Find the first key that is NOT a number (likely a label/name)
+        const key = Object.keys(item).find(k => {
+            const val = item[k];
+            return typeof val === 'string' && isNaN(parseFloat(val));
+        });
         return key ? item[key] : 'Label';
     }
 
@@ -343,6 +371,23 @@ export class AiAssistantComponent {
             return `${this.getChartColor(i)} ${start}% ${currentPct}%`;
         });
         return `conic-gradient(${slices.join(', ')})`;
+    }
+
+    getLinePoints(data: any): {x: number, y: number}[] {
+        const items = this.getChartItems(data);
+        if (items.length === 0) return [];
+        const max = Math.max(...items.map(d => this.getChartValue(d)), 1);
+        const step = 100 / (items.length - 1 || 1);
+        return items.map((d, i) => ({
+            x: i * step,
+            y: 100 - (this.getChartValue(d) / max) * 100
+        }));
+    }
+
+    getLinePath(data: any): string {
+        const points = this.getLinePoints(data);
+        if (points.length === 0) return '';
+        return `M ${points.map(p => `${p.x},${p.y}`).join(' L ')}`;
     }
 
     private scrollToBottom() {

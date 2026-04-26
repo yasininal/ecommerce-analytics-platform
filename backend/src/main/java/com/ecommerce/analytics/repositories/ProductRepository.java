@@ -13,7 +13,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     long countByStoreId(Long storeId);
 
     @org.springframework.data.jpa.repository.Query("SELECT p FROM Product p WHERE " +
-            "(:categoryId IS NULL OR p.category.id = :categoryId) AND " +
+            "(:categoryId IS NULL OR p.category.id = :categoryId OR p.category.parent.id = :categoryId) AND " +
             "(:minPrice IS NULL OR p.unitPrice >= :minPrice) AND " +
             "(:maxPrice IS NULL OR p.unitPrice <= :maxPrice) AND " +
             "(:search IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(p.brand) LIKE LOWER(CONCAT('%', :search, '%')))")
