@@ -113,7 +113,7 @@ interface Review {
               </div>
 
               <!-- Write Review Form -->
-              <div class="write-review-box" *ngIf="canShop">
+              <div class="write-review-box" *ngIf="isLoggedIn">
                  <h4 style="margin-top:20px; font-weight:700;">Write a Review</h4>
                  <div class="star-rating-select">
                     <span *ngFor="let s of [1,2,3,4,5]" (click)="newReview.starRating = s" 
@@ -228,6 +228,7 @@ export class ProductDetailComponent implements OnInit {
     quantity = 1;
     addedToCart = false;
     canShop = false;
+    isLoggedIn = false;
     newReview = { starRating: 0, comment: '' };
     
     constructor(
@@ -236,7 +237,8 @@ export class ProductDetailComponent implements OnInit {
         private cartService: CartService,
         private authService: AuthService
     ) { 
-        this.canShop = !!this.authService.getUserId();
+        this.canShop = true; // Everyone can see and add to cart
+        this.isLoggedIn = !!this.authService.token;
     }
 
     ngOnInit(): void {

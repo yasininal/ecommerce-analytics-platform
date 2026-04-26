@@ -268,24 +268,29 @@ export class CatalogComponent implements OnInit {
         private wishlistService: WishlistService,
         private authService: AuthService
     ) { 
-        this.canShop = !!this.authService.getUserId();
+        // Everyone can shop (add to cart), but some features like wishlist need login
+        this.canShop = true; 
     }
 
     ngOnInit() { 
         this.applyFilters();
-        if (this.canShop) {
+        if (this.authService.token) {
             this.loadWishlist();
         }
     }
     
     loadWishlist() {
         this.wishlistService.getUserWishlist().subscribe(list => {
-            list.forEach(w => this.wishlistedIds.add(w.productId));
+            this.wishlistedIds = new Set(list.map(w => w.productId));
         });
     }
 
-    toggleWishlist(event: Event, productId: number) {
+    toggleWishlist(event: MouseEvent, productId: number) {
         event.stopPropagation();
+        if (!this.authService.token) {
+            this.router.navigate(['/login'], { queryParams: { returnUrl: '/catalog' } });
+            return;
+        }
         this.wishlistService.toggleWishlist(productId).subscribe(() => {
             if (this.wishlistedIds.has(productId)) {
                 this.wishlistedIds.delete(productId);

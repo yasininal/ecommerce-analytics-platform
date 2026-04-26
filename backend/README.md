@@ -1,4 +1,4 @@
-# 🚀 E-Commerce Analytics Backend (Spring Boot)
+# 🚀 TrendAnalytix Backend (Spring Boot)
 
 This is the core REST API for the E-Commerce Analytics Platform, built with Spring Boot 3, Spring Security (JWT), and Spring Data JPA.
 

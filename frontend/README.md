@@ -1,4 +1,4 @@
-# 🎨 E-Commerce Analytics Frontend (Angular)
+# 🎨 TrendAnalytix Frontend (Angular)
 
 A premium, modern e-commerce dashboard and marketplace built with Angular 17.
 

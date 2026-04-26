@@ -28,7 +28,7 @@ DATABASE_URL = f"mysql+pymysql://{DB_USER}:{DB_PASS}@{DB_HOST}:3306/{DB_NAME}"
 engine = create_engine(DATABASE_URL)
 
 prompt = PromptTemplate.from_template(
-    """You are a SECURE E-commerce AI Data Analyst.
+    """You are the TrendAnalytix SECURE E-commerce AI Data Analyst.
     
 Database Schema:
 {schema}

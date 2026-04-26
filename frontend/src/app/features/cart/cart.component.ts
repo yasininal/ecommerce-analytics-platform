@@ -1,10 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { CartService, CartItem } from '../../core/services/cart.service';
 import { FormsModule } from '@angular/forms';
 import { DashboardService, AddressData, CouponData } from '../dashboard.service';
+import { AuthService } from '../../core/auth/auth.service';
 
 @Component({
     selector: 'app-cart',
@@ -193,7 +194,9 @@ export class CartComponent implements OnInit {
     constructor(
         public cartService: CartService, 
         private http: HttpClient,
-        private dashboardService: DashboardService
+        private dashboardService: DashboardService,
+        private router: Router,
+        private authService: AuthService
     ) { }
 
     ngOnInit() {
@@ -265,6 +268,11 @@ export class CartComponent implements OnInit {
 
     checkout() {
         if (this.items.length === 0 || this.isCheckingOut) return;
+        
+        if (!this.authService.token) {
+            this.router.navigate(['/login'], { queryParams: { returnUrl: '/cart' } });
+            return;
+        }
         
         const address = this.getFinalAddressString();
         if (this.selectedAddressId === 'new' || this.savedAddresses.length === 0) {

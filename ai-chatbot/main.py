@@ -10,7 +10,7 @@ load_dotenv()
 import nest_asyncio
 nest_asyncio.apply()
 
-app = FastAPI(title="E-Commerce AI Chatbot API")
+app = FastAPI(title="TrendAnalytix AI Chatbot API")
 
 app.add_middleware(
     CORSMiddleware,

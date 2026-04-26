@@ -1,4 +1,4 @@
-# 🛒 E-Commerce Analytics Platform — CSE 214 Final Project
+# 🛒 TrendAnalytix — CSE 214 Final Project
 
 > **Unified AI Super-Agent** destekli kapsamlı e-ticaret analitik platformu.  
 > Spring Boot · Angular · MySQL · LangChain · Gemini 2.0
@@ -18,7 +18,7 @@
 
 ```
 ecommerce-analytics-platform/
-├── backend/                    # Spring Boot API
+├── backend/                    # TrendAnalytix Backend (Spring Boot)
 │   ├── src/main/java/com/ecommerce/
 │   │   ├── config/             # Security, JWT, Stripe config
 │   │   ├── controllers/        # REST API (Auth, Order, Product, Address, etc.)
@@ -27,14 +27,14 @@ ecommerce-analytics-platform/
 │   │   └── services/           # Business Logic
 │   └── README.md
 │
-├── frontend/                   # Angular 17 App
+├── frontend/                   # TrendAnalytix Frontend (Angular)
 │   ├── src/app/
 │   │   ├── core/               # Auth, Interceptors, Services
 │   │   ├── features/           # Marketplace, Cart, Orders, Admin, Corporate
 │   │   └── shared/             # Modern UI Components
 │   └── README.md
 │
-├── ai-chatbot/                 # Python AI Service
+├── ai-chatbot/                 # TrendAnalytix AI Chatbot (Python/LangChain)
 │   ├── agents/                 # Individual Agent definitions (Architectural reference)
 │   ├── super_agent.py          # Unified High-Performance Agent
 │   ├── main.py                 # FastAPI Entrypoint
@@ -69,7 +69,7 @@ NOTIFICATIONS (id, user_id, message, is_read)
 
 ---
 
-## 🤖 AI Chatbot Mimarisi (Unified Super-Agent)
+## 🤖 TrendAnalytix AI Chatbot (Python/LangChain) Mimarisi (Unified Super-Agent)
 
 Projemiz, performansı artırmak ve API kota sınırlarını (Rate Limits) optimize etmek için **"Unified Super-Agent"** mimarisini kullanır. Bu yapı, klasik multi-agent akışını tek bir akıllı karar mekanizmasında birleştirir.
 

@@ -1,4 +1,4 @@
-# 🤖 Multi-Agent AI Chatbot (Python/LangGraph)
+# 🤖 TrendAnalytix AI Chatbot (Python/LangChain)
 
 An intelligent data assistant that converts natural language questions into SQL queries and visualizes results.
 

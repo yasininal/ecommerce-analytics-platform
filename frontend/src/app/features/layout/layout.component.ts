@@ -27,7 +27,7 @@ interface NavItem {
 
         <div class="sidebar-logo">
           <div class="logo-mark">🛍️</div>
-          <span class="logo-name">DataPulse</span>
+          <span class="logo-name">TrendAnalytix</span>
           <button class="sidebar-close-btn" (click)="closeSidebar()">✕</button>
         </div>
 
@@ -71,7 +71,11 @@ interface NavItem {
               <span class="hamburger-line"></span>
               <span class="hamburger-line"></span>
             </button>
-            <h1 class="logo-placeholder" *ngIf="!isLoggedIn" (click)="goToHome()" style="cursor:pointer">📊 DataPulse</h1>
+            <h1 class="logo-placeholder" (click)="goToHome()" style="cursor:pointer">🛍️ TrendAnalytix</h1>
+            <nav class="guest-nav" *ngIf="!isLoggedIn">
+               <a routerLink="/catalog" routerLinkActive="active">Marketplace</a>
+               <a routerLink="/cart" routerLinkActive="active">Cart</a>
+            </nav>
             <h2 class="page-title" *ngIf="isLoggedIn">{{ pageTitle }}</h2>
           </div>
           <div class="top-bar-right">
@@ -113,7 +117,10 @@ interface NavItem {
             </div>
             
             <!-- User is Guest -->
-            <button class="btn btn-primary" *ngIf="!isLoggedIn" (click)="goToLogin()">Sign In</button>
+            <div class="guest-actions" *ngIf="!isLoggedIn">
+               <button class="btn btn-ghost" (click)="goToLogin()">Sign In</button>
+               <button class="btn btn-primary" (click)="goToRegister()">Register</button>
+            </div>
           </div>
         </header>
 
@@ -404,7 +411,13 @@ interface NavItem {
       background: var(--bg-base);
     }
     
-    .logo-placeholder { font-size: 20px; font-weight: 800; background: linear-gradient(135deg, #fff, var(--accent-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .logo-placeholder { font-size: 22px; font-weight: 800; color: var(--accent); margin-right: 20px; }
+    .guest-nav { display: flex; gap: 20px; }
+    .guest-nav a { font-size: 14px; font-weight: 600; color: var(--text-secondary); text-decoration: none; transition: 0.2s; }
+    .guest-nav a:hover, .guest-nav a.active { color: var(--accent); }
+    .guest-actions { display: flex; gap: 10px; }
+    .btn-ghost { background: none; border: 1px solid var(--border-strong); color: var(--text-primary); }
+    .btn-ghost:hover { background: var(--bg-hover); }
 
     /* ── Notifications ── */
     .notif-wrapper { position: relative; }
@@ -431,7 +444,7 @@ interface NavItem {
 export class LayoutComponent {
     userEmail = '';
     userInitial = 'U';
-    pageTitle = 'DataPulse Analytics';
+    pageTitle = 'TrendAnalytix Analytics';
     currentTheme = 'light';
     sidebarOpen = false;
     isLoggedIn = false;
@@ -571,6 +584,10 @@ export class LayoutComponent {
 
     goToLogin() {
         this.router.navigate(['/login']);
+    }
+
+    goToRegister() {
+        this.router.navigate(['/login'], { queryParams: { mode: 'register' } });
     }
 
     goToHome() {

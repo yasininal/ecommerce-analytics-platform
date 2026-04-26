@@ -28,8 +28,8 @@ export const routes: Routes = [
             { path: 'catalog', component: CatalogComponent },
             { path: 'catalog/:id', component: ProductDetailComponent },
             { path: 'cart', component: CartComponent },
-            { path: 'payment-success', component: PaymentSuccessComponent },
-            { path: 'my-orders', component: MyOrdersComponent },
+            { path: 'payment-success', component: PaymentSuccessComponent, canActivate: [authGuard] },
+            { path: 'my-orders', component: MyOrdersComponent, canActivate: [authGuard] },
             { path: '', redirectTo: 'catalog', pathMatch: 'full' }
         ]
     },
