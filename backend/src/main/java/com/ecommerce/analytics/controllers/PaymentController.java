@@ -15,6 +15,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @RestController
@@ -33,6 +34,8 @@ public class PaymentController {
     private final OrderItemRepository orderItemRepository;
     private final UserRepository userRepository;
     private final StoreRepository storeRepository;
+    private final NotificationRepository notificationRepository;
+    private final CouponRepository couponRepository;
 
     @PostConstruct
     public void init() {
@@ -122,13 +125,32 @@ public class PaymentController {
                     total = total.add(BigDecimal.valueOf(ci.getPrice() * ci.getQuantity()));
                 }
 
+                // Apply Coupon Discount
+                if (request.getCouponCode() != null && !request.getCouponCode().isEmpty()) {
+                    Optional<Coupon> couponOpt = couponRepository.findByCodeAndIsActiveTrue(request.getCouponCode());
+                    if (couponOpt.isPresent()) {
+                        Coupon coupon = couponOpt.get();
+                        if (coupon.getExpiryDate().isAfter(LocalDateTime.now())) {
+                            BigDecimal discount = total.multiply(coupon.getDiscountPercentage().divide(BigDecimal.valueOf(100)));
+                            total = total.subtract(discount);
+                        }
+                    }
+                }
+
                 Order order = Order.builder()
                         .user(user)
                         .store(store)
                         .status(Order.OrderStatus.PROCESSING)
                         .grandTotal(total)
+                        .shippingAddress(request.getShippingAddress())
                         .build();
                 orderRepository.save(order);
+
+                // Create Notification
+                Notification notification = new Notification();
+                notification.setUser(user);
+                notification.setMessage("Your order #" + order.getId() + " has been created and is being processed.");
+                notificationRepository.save(notification);
 
                 // Create order items and reduce stock
                 for (CartItem ci : items) {
@@ -182,6 +204,7 @@ public class PaymentController {
         private List<CartItem> items;
         private String successUrl;
         private String cancelUrl;
+        private String couponCode;
 
         public List<CartItem> getItems() { return items; }
         public void setItems(List<CartItem> items) { this.items = items; }
@@ -189,15 +212,23 @@ public class PaymentController {
         public void setSuccessUrl(String successUrl) { this.successUrl = successUrl; }
         public String getCancelUrl() { return cancelUrl; }
         public void setCancelUrl(String cancelUrl) { this.cancelUrl = cancelUrl; }
+        public String getCouponCode() { return couponCode; }
+        public void setCouponCode(String couponCode) { this.couponCode = couponCode; }
     }
 
     static class ConfirmRequest {
         private String sessionId;
         private List<CartItem> items;
+        private String couponCode;
+        private String shippingAddress;
 
         public String getSessionId() { return sessionId; }
         public void setSessionId(String sessionId) { this.sessionId = sessionId; }
         public List<CartItem> getItems() { return items; }
         public void setItems(List<CartItem> items) { this.items = items; }
+        public String getCouponCode() { return couponCode; }
+        public void setCouponCode(String couponCode) { this.couponCode = couponCode; }
+        public String getShippingAddress() { return shippingAddress; }
+        public void setShippingAddress(String shippingAddress) { this.shippingAddress = shippingAddress; }
     }
 }

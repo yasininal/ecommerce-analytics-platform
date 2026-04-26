@@ -1,23 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { CartService } from '../../core/services/cart.service';
 import { WishlistService } from '../../core/services/wishlist.service';
 import { AuthService } from '../../core/auth/auth.service';
-
-export interface Product {
-    id: number;
-    name: string;
-    sku: string;
-    unitPrice: number;
-    categoryName: string;
-    storeName: string;
-    description?: string;
-    imageUrl?: string;
-    stockQuantity: number;
-}
+import { DashboardService, ProductData } from '../dashboard.service';
 
 @Component({
     selector: 'app-catalog',
@@ -33,80 +21,95 @@ export interface Product {
           <p>Shop the latest tech, fashion & accessories with express delivery</p>
           <div class="hero-search">
             <span class="s-icon">🔍</span>
-            <input type="text" [(ngModel)]="searchQuery" (input)="filterProducts()" placeholder="Search for products, brands & more...">
-          </div>
-          <div class="hero-stats">
-            <div class="stat"><strong>{{ products.length }}+</strong><span>Products</span></div>
-            <div class="stat-sep"></div>
-            <div class="stat"><strong>2</strong><span>Stores</span></div>
-            <div class="stat-sep"></div>
-            <div class="stat"><strong>FREE</strong><span>Shipping</span></div>
+            <input type="text" [(ngModel)]="filters.search" (input)="applyFilters()" placeholder="Search for products, brands & more...">
           </div>
         </div>
       </section>
 
-      <!-- Category Quick Access -->
-      <section class="category-strip">
-        <button *ngFor="let cat of categories"
-                [class.active]="activeCategory === cat.name"
-                (click)="setCategory(cat.name)"
-                class="cat-chip">
-          <span class="cat-icon">{{ cat.emoji }}</span>
-          <span class="cat-label">{{ cat.name }}</span>
-        </button>
-      </section>
-
-      <!-- Products Grid -->
-      <section class="products-section">
-        <div class="section-head">
-          <h2 *ngIf="activeCategory === 'All'">🛍️ All Products</h2>
-          <h2 *ngIf="activeCategory !== 'All'">{{ getEmoji(activeCategory) }} {{ activeCategory }}</h2>
-          <span class="result-count">{{ filteredProducts.length }} products</span>
-        </div>
-
-        <div class="loading-overlay" *ngIf="loading">
-          <div class="spinner"></div>
-        </div>
-
-        <div class="products-grid" *ngIf="!loading">
-          <div class="product-card" *ngFor="let p of filteredProducts">
-            <div class="card-visual" (click)="viewDetail(p.id)">
-               <div class="p-emoji">{{ getEmoji(p.categoryName) }}</div>
-               <div class="card-overlay">
-                 <button class="view-btn">View Details →</button>
-               </div>
-               <button class="wishlist-btn" (click)="toggleWishlist($event, p.id)" *ngIf="canShop">
-                  <span *ngIf="!wishlistedIds.has(p.id)">🤍</span>
-                  <span *ngIf="wishlistedIds.has(p.id)">❤️</span>
-               </button>
-               <div class="stock-badge" *ngIf="p.stockQuantity < 10">Only {{ p.stockQuantity }} left!</div>
-            </div>
-            <div class="card-body">
-              <div class="cat-pill">{{ p.categoryName }}</div>
-              <h3 class="p-title" (click)="viewDetail(p.id)">{{ p.name }}</h3>
-              <div class="p-meta">
-                <span class="store">🏪 {{ p.storeName }}</span>
+      <div class="catalog-layout">
+        <!-- Sidebar Filters -->
+        <aside class="filters-sidebar">
+           <div class="filter-section">
+              <h3>Categories</h3>
+              <div class="cat-list">
+                 <button *ngFor="let cat of categories" 
+                         [class.active]="filters.categoryId === cat.id"
+                         (click)="setCategoryId(cat.id)"
+                         class="cat-link">
+                    <span class="emoji">{{ cat.emoji }}</span> {{ cat.name }}
+                 </button>
               </div>
-              <div class="card-footer">
-                <div class="price-box">
-                  <span class="currency">$</span>
-                  <span class="val">{{ p.unitPrice }}</span>
+           </div>
+
+           <div class="filter-section">
+              <h3>Price Range</h3>
+              <div class="price-inputs">
+                 <input type="number" [(ngModel)]="filters.minPrice" (change)="applyFilters()" placeholder="Min $">
+                 <span>-</span>
+                 <input type="number" [(ngModel)]="filters.maxPrice" (change)="applyFilters()" placeholder="Max $">
+              </div>
+           </div>
+
+           <div class="filter-section">
+              <button class="clear-btn" (click)="clearFilters()">Clear All Filters</button>
+           </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="products-main">
+          <div class="section-head">
+            <h2>🛍️ Products</h2>
+            <span class="result-count">{{ filteredProducts.length }} products</span>
+          </div>
+
+          <div class="loading-overlay" *ngIf="loading">
+            <div class="spinner"></div>
+          </div>
+
+          <div class="products-grid" *ngIf="!loading">
+            <div class="product-card" *ngFor="let p of filteredProducts">
+              <div class="card-visual" (click)="viewDetail(p.id)">
+                 <div class="p-emoji">{{ getEmoji(p.categoryName) }}</div>
+                 <div class="card-overlay">
+                   <button class="view-btn">View Details →</button>
+                 </div>
+                 <button class="wishlist-btn" 
+                         [class.active]="wishlistedIds.has(p.id)"
+                         (click)="toggleWishlist($event, p.id)" 
+                         *ngIf="canShop">
+                    <span *ngIf="!wishlistedIds.has(p.id)">🤍</span>
+                    <span *ngIf="wishlistedIds.has(p.id)">❤️</span>
+                 </button>
+                 <div class="stock-badge" *ngIf="p.stockQuantity < 10">Only {{ p.stockQuantity }} left!</div>
+              </div>
+              <div class="card-body">
+                <div class="brand-pill" *ngIf="p.brand">{{ p.brand }}</div>
+                <div class="cat-pill">{{ p.categoryName }}</div>
+                <h3 class="p-title" (click)="viewDetail(p.id)">{{ p.name }}</h3>
+                <div class="p-meta">
+                  <span class="store">🏪 {{ p.storeName }}</span>
                 </div>
-                <button class="add-cart-btn" (click)="addToCart($event, p)" [class.added]="addedIds.has(p.id)">
-                  <span *ngIf="!addedIds.has(p.id)">🛒 Add</span>
-                  <span *ngIf="addedIds.has(p.id)">✅</span>
-                </button>
+                <div class="card-footer">
+                  <div class="price-box">
+                    <span class="currency">$</span>
+                    <span class="val">{{ p.unitPrice }}</span>
+                  </div>
+                  <button class="add-cart-btn" (click)="addToCart($event, p)" [class.added]="addedIds.has(p.id)">
+                    <span *ngIf="!addedIds.has(p.id)">🛒 Add</span>
+                    <span *ngIf="addedIds.has(p.id)">✅</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <div class="empty-state" *ngIf="!loading && filteredProducts.length === 0">
-          <div class="empty-icon">📂</div>
-          <h3>No products found</h3>
-          <p>Try adjusting your search or category filters.</p>
-        </div>
-      </section>
+          <div class="empty-state" *ngIf="!loading && filteredProducts.length === 0">
+            <div class="empty-icon">📂</div>
+            <h3>No products found</h3>
+            <p>Try adjusting your search or category filters.</p>
+          </div>
+        </main>
+      </div>
     </div>
   `,
     styles: [`
@@ -155,21 +158,33 @@ export interface Product {
     .stat span { font-size: 11px; color: rgba(255,255,255,0.4); font-weight: 600; text-transform: uppercase; }
     .stat-sep { width: 1px; height: 28px; background: rgba(255,255,255,0.1); }
 
-    /* ── Category Strip ── */
-    .category-strip { display: flex; gap: 10px; padding: 20px 48px; overflow-x: auto; background: var(--bg-surface); border-bottom: 1px solid var(--border); }
-    .cat-chip { display: flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 99px; border: 1px solid var(--border); background: var(--bg-elevated); cursor: pointer; transition: 0.2s; white-space: nowrap; font-size: 13px; font-weight: 600; color: var(--text-secondary); }
-    .cat-chip:hover { border-color: var(--accent); color: var(--text-primary); }
-    .cat-chip.active { background: var(--accent); color: white; border-color: var(--accent); box-shadow: 0 4px 12px rgba(124,92,252,0.3); }
-    .cat-icon { font-size: 16px; }
+    /* ── Catalog Layout ── */
+    .catalog-layout { display: grid; grid-template-columns: 280px 1fr; gap: 32px; padding: 40px 48px; }
+    
+    .filters-sidebar { position: sticky; top: 100px; height: fit-content; background: var(--bg-surface); border: 1px solid var(--border); border-radius: 20px; padding: 24px; }
+    .filter-section { margin-bottom: 32px; }
+    .filter-section h3 { font-size: 15px; font-weight: 800; margin-bottom: 16px; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.05em; }
+    
+    .cat-list { display: flex; flex-direction: column; gap: 8px; }
+    .cat-link { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 10px; border: 1px solid transparent; background: none; color: var(--text-secondary); cursor: pointer; transition: 0.2s; text-align: left; font-weight: 600; font-size: 14px; }
+    .cat-link:hover { background: var(--bg-elevated); color: var(--text-primary); }
+    .cat-link.active { background: var(--accent); color: white; }
+    
+    .price-inputs { display: flex; align-items: center; gap: 10px; }
+    .price-inputs input { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-elevated); color: var(--text-primary); outline: none; font-size: 14px; }
+    .price-inputs input:focus { border-color: var(--accent); }
+    
+    .clear-btn { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #ef4444; background: rgba(239,68,68,0.05); color: #ef4444; font-weight: 700; cursor: pointer; transition: 0.2s; }
+    .clear-btn:hover { background: #ef4444; color: white; }
 
-    /* ── Products Section ── */
-    .products-section { padding: 32px 48px 60px; }
+    /* ── Products Main ── */
+    .products-main { min-width: 0; }
     .section-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-    .section-head h2 { font-size: 22px; font-weight: 800; color: var(--text-primary); margin: 0; }
-    .result-count { font-size: 13px; color: var(--text-muted); font-weight: 600; }
+    .section-head h2 { font-size: 24px; font-weight: 800; color: var(--text-primary); margin: 0; }
+    .result-count { font-size: 14px; color: var(--text-muted); font-weight: 600; }
 
     /* Product Grid */
-    .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
+    .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 24px; }
     .product-card {
       background: var(--bg-surface);
       border: 1px solid var(--border);
@@ -179,51 +194,36 @@ export interface Product {
     }
     .product-card:hover { transform: translateY(-6px); border-color: var(--accent); box-shadow: 0 16px 40px rgba(0,0,0,0.15); }
 
-    .card-visual {
-      height: 200px;
-      background: var(--bg-elevated);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      overflow: hidden;
-      cursor: pointer;
-    }
-    .p-emoji { font-size: 72px; transition: transform 0.3s; }
-    .product-card:hover .p-emoji { transform: scale(1.1); }
-    .stock-badge { position: absolute; top: 12px; right: 12px; padding: 4px 10px; background: rgba(239,68,68,0.9); color: white; border-radius: 8px; font-size: 11px; font-weight: 700; }
-
-    .card-overlay {
-      position: absolute;
-      inset: 0;
-      background: rgba(0,0,0,0.4);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      opacity: 0;
-      transition: 0.3s;
-      backdrop-filter: blur(4px);
-    }
+    .card-visual { height: 180px; background: var(--bg-elevated); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; cursor: pointer; }
+    .p-emoji { font-size: 64px; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    .product-card:hover .p-emoji { transform: scale(1.15) rotate(5deg); }
+    
+    .card-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; opacity: 0; transition: 0.3s; backdrop-filter: blur(2px); }
     .product-card:hover .card-overlay { opacity: 1; }
-    .view-btn { padding: 10px 20px; background: white; color: black; border-radius: 12px; font-weight: 700; border: none; font-size: 13px; transform: translateY(10px); transition: 0.3s; cursor: pointer; }
+    .view-btn { padding: 10px 20px; background: white; color: black; border: none; border-radius: 12px; font-weight: 700; font-size: 13px; cursor: pointer; transform: translateY(20px); transition: 0.3s 0.1s; box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
     .product-card:hover .view-btn { transform: translateY(0); }
-    .wishlist-btn { position: absolute; top: 12px; left: 12px; background: rgba(255,255,255,0.2); backdrop-filter: blur(4px); border: none; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; z-index: 2; font-size: 16px; }
-    .wishlist-btn:hover { transform: scale(1.1); background: rgba(255,255,255,0.4); }
+    .view-btn:hover { background: var(--accent); color: white; }
 
-    .card-body { padding: 20px; }
-    .cat-pill { font-size: 10px; font-weight: 800; color: var(--accent-light); text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.05em; }
-    .p-title { font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0 0 8px 0; line-height: 1.3; cursor: pointer; }
-    .p-title:hover { color: var(--accent); }
-    .p-meta { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
-    .store { font-size: 12px; color: var(--text-secondary); }
+    .wishlist-btn { position: absolute; top: 12px; right: 12px; width: 36px; height: 36px; border-radius: 50%; border: none; background: rgba(255,255,255,0.9); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 2; transition: 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.1); font-size: 16px; }
+    .wishlist-btn:hover { transform: scale(1.1); background: white; }
+    .wishlist-btn.active { color: #f43f5e; }
 
-    .card-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 14px; border-top: 1px solid var(--border); }
-    .price-box { display: flex; align-items: flex-start; gap: 2px; }
-    .currency { font-size: 14px; font-weight: 600; color: var(--accent-light); margin-top: 4px; }
-    .val { font-size: 22px; font-weight: 800; color: var(--text-primary); }
+    .stock-badge { position: absolute; bottom: 12px; left: 12px; background: rgba(239,68,68,0.9); color: white; font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 20px; backdrop-filter: blur(4px); }
 
-    .add-cart-btn { padding: 8px 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-elevated); cursor: pointer; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 4px; transition: 0.2s; color: var(--text-primary); }
-    .add-cart-btn:hover { background: var(--accent); border-color: var(--accent); color: white; transform: scale(1.05); }
+    .card-body { padding: 18px; }
+    .brand-pill { font-size: 10px; font-weight: 800; background: var(--accent-glow); color: var(--accent); padding: 4px 10px; border-radius: 20px; display: inline-block; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .cat-pill { font-size: 11px; font-weight: 600; color: var(--text-muted); margin-left: 8px; }
+    .p-title { font-size: 16px; font-weight: 800; color: var(--text-primary); margin: 0 0 10px 0; line-height: 1.4; transition: 0.2s; }
+    .p-meta { margin-bottom: 18px; }
+    .store { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-muted); font-weight: 500; }
+
+    .card-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 16px; border-top: 1px solid var(--border); }
+    .price-box { display: flex; align-items: flex-start; }
+    .currency { font-size: 13px; font-weight: 700; color: var(--accent); margin-top: 3px; margin-right: 1px; }
+    .val { font-size: 24px; font-weight: 900; color: var(--text-primary); }
+
+    .add-cart-btn { padding: 10px 18px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-elevated); cursor: pointer; font-size: 13px; font-weight: 800; display: flex; align-items: center; gap: 6px; transition: 0.2s; color: var(--text-primary); }
+    .add-cart-btn:hover { background: var(--accent); border-color: var(--accent); color: white; transform: scale(1.05); box-shadow: 0 4px 15px rgba(241,100,30,0.3); }
     .add-cart-btn.added { background: #22c55e; border-color: #22c55e; color: white; }
 
     .empty-state { text-align: center; padding: 80px 0; }
@@ -237,26 +237,32 @@ export interface Product {
   `]
 })
 export class CatalogComponent implements OnInit {
-    products: Product[] = [];
-    filteredProducts: Product[] = [];
+    products: ProductData[] = [];
+    filteredProducts: ProductData[] = [];
     categories = [
-        { name: 'All', emoji: '🏠' },
-        { name: 'Smartphones', emoji: '📱' },
-        { name: 'Laptops', emoji: '💻' },
-        { name: 'Accessories', emoji: '🎧' },
-        { name: 'Clothing', emoji: '👕' },
-        { name: 'Shoes', emoji: '👟' },
-        { name: 'Bags', emoji: '👜' },
+        { id: null as any, name: 'All Products', emoji: '🏠' },
+        { id: 1, name: 'Smartphones', emoji: '📱' },
+        { id: 2, name: 'Laptops', emoji: '💻' },
+        { id: 3, name: 'Accessories', emoji: '🎧' },
+        { id: 4, name: 'Clothing', emoji: '👕' },
+        { id: 5, name: 'Shoes', emoji: '👟' },
+        { id: 6, name: 'Bags', emoji: '👜' },
     ];
-    activeCategory = 'All';
-    searchQuery = '';
+    
+    filters = {
+        categoryId: null as number | null,
+        minPrice: null as number | null,
+        maxPrice: null as number | null,
+        search: ''
+    };
+
     loading = true;
     addedIds = new Set<number>();
     wishlistedIds = new Set<number>();
     canShop = false;
 
     constructor(
-        private http: HttpClient, 
+        private dashboardService: DashboardService,
         private router: Router, 
         private cartService: CartService,
         private wishlistService: WishlistService,
@@ -266,7 +272,7 @@ export class CatalogComponent implements OnInit {
     }
 
     ngOnInit() { 
-        this.loadProducts(); 
+        this.applyFilters();
         if (this.canShop) {
             this.loadWishlist();
         }
@@ -289,11 +295,30 @@ export class CatalogComponent implements OnInit {
         });
     }
 
-    loadProducts() {
-        this.http.get<Product[]>('/api/products').subscribe({
-            next: (data) => { this.products = data; this.filterProducts(); this.loading = false; },
+    applyFilters() {
+        this.loading = true;
+        this.dashboardService.searchProducts(this.filters).subscribe({
+            next: (data) => { 
+                this.filteredProducts = data; 
+                this.loading = false; 
+            },
             error: () => (this.loading = false)
         });
+    }
+
+    setCategoryId(id: number | null) {
+        this.filters.categoryId = id;
+        this.applyFilters();
+    }
+
+    clearFilters() {
+        this.filters = {
+            categoryId: null,
+            minPrice: null,
+            maxPrice: null,
+            search: ''
+        };
+        this.applyFilters();
     }
 
     getEmoji(category: string): string {
@@ -304,19 +329,9 @@ export class CatalogComponent implements OnInit {
         return mapping[category] || '📦';
     }
 
-    setCategory(cat: string) { this.activeCategory = cat; this.filterProducts(); }
-
-    filterProducts() {
-        this.filteredProducts = this.products.filter(p => {
-            const matchesCat = this.activeCategory === 'All' || p.categoryName === this.activeCategory;
-            const matchesSearch = p.name.toLowerCase().includes(this.searchQuery.toLowerCase());
-            return matchesCat && matchesSearch;
-        });
-    }
-
     viewDetail(id: number) { this.router.navigate(['/catalog', id]); }
 
-    addToCart(event: Event, p: Product) {
+    addToCart(event: Event, p: ProductData) {
         event.stopPropagation();
         this.cartService.addToCart({
             productId: p.id,

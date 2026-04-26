@@ -4,6 +4,7 @@ import { RouterModule, RouterLink, RouterLinkActive, Router } from '@angular/rou
 import { AuthService } from '../../core/auth/auth.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { CartService } from '../../core/services/cart.service';
+import { DashboardService, NotificationData } from '../dashboard.service';
 
 interface NavItem {
     label: string;
@@ -77,6 +78,28 @@ interface NavItem {
             <button class="theme-toggle-btn" (click)="toggleTheme()" [title]="currentTheme === 'light' ? 'Dark Mode' : 'Light Mode'">
               {{ currentTheme === 'light' ? '🌙' : '☀️' }}
             </button>
+            
+            <!-- Notifications -->
+            <div class="notif-wrapper" *ngIf="isLoggedIn">
+               <button class="notif-btn" (click)="toggleNotifications()">
+                  🔔
+                  <span class="notif-badge" *ngIf="unreadCount > 0">{{ unreadCount }}</span>
+               </button>
+               <div class="notif-dropdown" *ngIf="showNotifs">
+                  <div class="notif-header">
+                     <span>Notifications</span>
+                     <button (click)="loadNotifications()">🔄</button>
+                  </div>
+                  <div class="notif-list">
+                     <div *ngFor="let n of notifications" class="notif-item" [class.unread]="!n.isRead" (click)="readNotif(n)">
+                        <div class="notif-msg">{{ n.message }}</div>
+                        <div class="notif-time">{{ n.createdAt | date:'short' }}</div>
+                     </div>
+                     <div class="notif-empty" *ngIf="notifications.length === 0">No notifications</div>
+                  </div>
+               </div>
+            </div>
+
             <!-- Cart Icon -->
             <a routerLink="/cart" class="cart-icon-btn" title="Shopping Cart">
               🛒
@@ -382,6 +405,27 @@ interface NavItem {
     }
     
     .logo-placeholder { font-size: 20px; font-weight: 800; background: linear-gradient(135deg, #fff, var(--accent-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+    /* ── Notifications ── */
+    .notif-wrapper { position: relative; }
+    .notif-btn { background: var(--bg-elevated); border: 1px solid var(--border); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; transition: 0.2s; position: relative; }
+    .notif-btn:hover { background: var(--bg-hover); transform: scale(1.05); }
+    .notif-badge { position: absolute; top: -2px; right: -2px; background: #ef4444; color: white; font-size: 10px; font-weight: 800; min-width: 16px; height: 16px; border-radius: 99px; display: flex; align-items: center; justify-content: center; }
+    
+    .notif-dropdown { position: absolute; top: 100%; right: 0; margin-top: 10px; width: 320px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); z-index: 1000; overflow: hidden; animation: slideDown 0.3s ease; }
+    @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    
+    .notif-header { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--bg-elevated); }
+    .notif-header span { font-weight: 800; font-size: 13px; text-transform: uppercase; color: var(--text-primary); }
+    .notif-header button { background: none; border: none; cursor: pointer; opacity: 0.6; }
+    
+    .notif-list { max-height: 400px; overflow-y: auto; }
+    .notif-item { padding: 16px 18px; border-bottom: 1px solid var(--border); cursor: pointer; transition: 0.2s; }
+    .notif-item:hover { background: var(--bg-hover); }
+    .notif-item.unread { background: rgba(124,92,252,0.05); border-left: 4px solid var(--accent); }
+    .notif-msg { font-size: 13px; line-height: 1.4; color: var(--text-primary); margin-bottom: 6px; }
+    .notif-time { font-size: 11px; color: var(--text-muted); }
+    .notif-empty { padding: 40px; text-align: center; color: var(--text-muted); font-size: 13px; }
   `]
 })
 export class LayoutComponent {
@@ -392,7 +436,10 @@ export class LayoutComponent {
     sidebarOpen = false;
     isLoggedIn = false;
     cartCount = 0;
-
+    
+    unreadCount = 0;
+    notifications: NotificationData[] = [];
+    showNotifs = false;
 
     mainNav: NavItem[] = [];
     mgmtNav: NavItem[] = [];
@@ -401,27 +448,58 @@ export class LayoutComponent {
       private authService: AuthService, 
       private router: Router,
       private themeService: ThemeService,
-      private cartService: CartService
+      private cartService: CartService,
+      private dashboardService: DashboardService
     ) {
         this.themeService.theme$.subscribe(t => this.currentTheme = t);
         this.cartService.cart$.subscribe(items => {
             this.cartCount = items.reduce((sum, i) => sum + i.quantity, 0);
         });
 
-        // Subscribe to auth state to react immediately to login/logout
+        // Subscribe to auth state
         this.authService.currentUser$.subscribe(user => {
             this.isLoggedIn = !!user;
             if (user) {
                 this.userEmail = user.sub || localStorage.getItem('userEmail') || '';
                 this.userInitial = this.userEmail.charAt(0).toUpperCase();
                 this.updateNavigation();
+                this.loadNotificationCount();
             } else {
                 this.userEmail = '';
                 this.userInitial = 'U';
                 this.mainNav = [];
                 this.mgmtNav = [];
+                this.unreadCount = 0;
+                this.notifications = [];
             }
         });
+    }
+
+    loadNotificationCount() {
+        this.dashboardService.getUnreadNotificationCount().subscribe(c => this.unreadCount = c);
+    }
+
+    toggleNotifications() {
+        this.showNotifs = !this.showNotifs;
+        if (this.showNotifs) {
+            this.loadNotifications();
+        }
+    }
+
+    loadNotifications() {
+        this.dashboardService.getNotifications().subscribe(list => {
+            this.notifications = list;
+            this.loadNotificationCount();
+        });
+    }
+
+    readNotif(n: NotificationData) {
+        if (!n.isRead) {
+            this.dashboardService.markNotificationAsRead(n.id).subscribe(() => {
+                n.isRead = true;
+                this.loadNotificationCount();
+            });
+        }
     }
 
     private updateNavigation() {
@@ -473,6 +551,7 @@ export class LayoutComponent {
                 { label: 'My Orders', icon: '📦', route: '/my-orders' },
                 { label: 'My Reviews', icon: '📝', route: '/individual/reviews' },
                 { label: 'AI Assistant', icon: '🤖', route: '/individual/ai-assistant' },
+                { label: 'Settings', icon: '⚙️', route: '/individual/settings' },
             ];
             this.mgmtNav = [];
         }

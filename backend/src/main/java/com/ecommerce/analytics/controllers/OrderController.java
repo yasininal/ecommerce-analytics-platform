@@ -3,8 +3,10 @@ package com.ecommerce.analytics.controllers;
 import com.ecommerce.analytics.controllers.dto.OrderDto;
 import com.ecommerce.analytics.entities.Order;
 import com.ecommerce.analytics.entities.Store;
+import com.ecommerce.analytics.entities.Notification;
 import com.ecommerce.analytics.repositories.OrderRepository;
 import com.ecommerce.analytics.repositories.StoreRepository;
+import com.ecommerce.analytics.repositories.NotificationRepository;
 import com.ecommerce.analytics.security.UserDetailsImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +26,7 @@ public class OrderController {
 
         private final OrderRepository orderRepository;
         private final StoreRepository storeRepository;
+        private final NotificationRepository notificationRepository;
 
         @GetMapping
         @PreAuthorize("hasRole('ADMIN')")
@@ -129,6 +132,13 @@ public class OrderController {
                 try {
                     order.setStatus(Order.OrderStatus.valueOf(newStatus));
                     orderRepository.save(order);
+
+                    // Create Notification
+                    Notification notification = new Notification();
+                    notification.setUser(order.getUser());
+                    notification.setMessage("The status of your order #" + order.getId() + " has been updated to " + newStatus + ".");
+                    notificationRepository.save(notification);
+
                     return ResponseEntity.ok(Map.of(
                         "message", "Order status updated",
                         "orderId", order.getId(),
@@ -179,7 +189,8 @@ public class OrderController {
                         o.getUser().getEmail(),
                         o.getStore().getName(),
                         o.getStatus().name(),
-                        o.getGrandTotal().doubleValue()
+                        o.getGrandTotal().doubleValue(),
+                        o.getShippingAddress()
                 );
         }
 }

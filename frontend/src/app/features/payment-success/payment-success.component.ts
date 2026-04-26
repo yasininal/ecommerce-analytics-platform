@@ -70,6 +70,8 @@ export class PaymentSuccessComponent implements OnInit {
         }
 
         const items = JSON.parse(pendingItems);
+        const address = sessionStorage.getItem('pendingAddress') || 'No address provided';
+        const coupon = sessionStorage.getItem('pendingCoupon') || null;
         const params = new URLSearchParams(window.location.search);
         const sessionId = params.get('session_id');
 
@@ -80,7 +82,9 @@ export class PaymentSuccessComponent implements OnInit {
                 productName: i.productName,
                 price: i.price,
                 quantity: i.quantity
-            }))
+            })),
+            shippingAddress: address,
+            couponCode: coupon
         }).subscribe({
             next: (res) => {
                 this.orderDetails = res.orders || [];

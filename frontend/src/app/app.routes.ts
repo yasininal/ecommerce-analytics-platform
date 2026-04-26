@@ -93,6 +93,7 @@ export const routes: Routes = [
             { path: 'catalog/:id', component: ProductDetailComponent },
             { path: 'favorites', loadComponent: () => import('./features/favorites/favorites.component').then(m => m.FavoritesComponent) },
             { path: 'reviews', component: ReviewsComponent },
+            { path: 'settings', component: SettingsComponent },
             { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
         ]
     },

@@ -29,11 +29,13 @@ export interface OrderData {
     storeName: string;
     status: string;
     grandTotal: number;
+    shippingAddress?: string;
 }
 
 export interface ProductData {
     id: number;
     name: string;
+    brand?: string;
     sku: string;
     unitPrice: number;
     categoryName: string;
@@ -68,6 +70,28 @@ export interface ReviewData {
     starRating: number;
     comment: string;
     sentiment: string;
+}
+
+export interface AddressData {
+    id?: number;
+    title: string;
+    fullAddress: string;
+    city: string;
+    isDefault: boolean;
+}
+
+export interface NotificationData {
+    id: number;
+    message: string;
+    isRead: boolean;
+    createdAt: string;
+}
+
+export interface CouponData {
+    id: number;
+    code: string;
+    discountPercentage: number;
+    expiryDate: string;
 }
 
 @Injectable({
@@ -132,5 +156,28 @@ export class DashboardService {
 
     createStore(data: any): Observable<any> {
         return this.http.post<any>(`${this.baseApiUrl}/stores`, data);
+    }
+
+    // Addresses
+    getAddresses(): Observable<AddressData[]> { return this.http.get<AddressData[]>(`${this.baseApiUrl}/addresses`); }
+    addAddress(address: AddressData): Observable<AddressData> { return this.http.post<AddressData>(`${this.baseApiUrl}/addresses`, address); }
+    deleteAddress(id: number): Observable<void> { return this.http.delete<void>(`${this.baseApiUrl}/addresses/${id}`); }
+
+    // Notifications
+    getNotifications(): Observable<NotificationData[]> { return this.http.get<NotificationData[]>(`${this.baseApiUrl}/notifications`); }
+    getUnreadNotificationCount(): Observable<number> { return this.http.get<number>(`${this.baseApiUrl}/notifications/unread-count`); }
+    markNotificationAsRead(id: number): Observable<void> { return this.http.put<void>(`${this.baseApiUrl}/notifications/${id}/read`, {}); }
+
+    // Coupons
+    validateCoupon(code: string): Observable<CouponData> { return this.http.get<CouponData>(`${this.baseApiUrl}/coupons/validate/${code}`); }
+
+    // Search
+    searchProducts(filters: any): Observable<ProductData[]> {
+        let params = '?';
+        if (filters.categoryId) params += `categoryId=${filters.categoryId}&`;
+        if (filters.minPrice) params += `minPrice=${filters.minPrice}&`;
+        if (filters.maxPrice) params += `maxPrice=${filters.maxPrice}&`;
+        if (filters.search) params += `search=${filters.search}&`;
+        return this.http.get<ProductData[]>(`${this.baseApiUrl}/products/search${params}`);
     }
 }

@@ -15,6 +15,9 @@ shipments (id, order_id, warehouse, mode ENUM('STANDARD','EXPRESS','OVERNIGHT'),
 products (id, store_id, category_id, sku, name, unit_price, stock_quantity)
 reviews (id, user_id, product_id, star_rating 1-5, sentiment ENUM('POSITIVE','NEUTRAL','NEGATIVE'), created_at DATETIME)
 categories (id, name, parent_id)
+addresses (id, user_id, title, full_address, city, is_default)
+notifications (id, user_id, message, is_read, created_at)
+coupons (id, code, discount_percentage, expiry_date, is_active)
 """
 
 DB_USER = os.getenv("MYSQL_USER", "root")

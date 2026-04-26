@@ -30,6 +30,8 @@ public class Product {
     @Column(nullable = false)
     private String name;
 
+    private String brand;
+
     @Column(columnDefinition = "TEXT")
     private String description;
 

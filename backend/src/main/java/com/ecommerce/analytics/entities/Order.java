@@ -32,6 +32,9 @@ public class Order {
     @Column(name = "grand_total", nullable = false, precision = 10, scale = 2)
     private BigDecimal grandTotal;
 
+    @Column(name = "shipping_address", columnDefinition = "TEXT")
+    private String shippingAddress;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

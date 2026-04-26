@@ -13,4 +13,5 @@ public class OrderDto {
     private String storeName;
     private String status;
     private Double grandTotal;
+    private String shippingAddress;
 }

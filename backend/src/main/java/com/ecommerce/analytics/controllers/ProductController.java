@@ -28,6 +28,20 @@ public class ProductController {
                 return ResponseEntity.ok(products);
         }
 
+        @GetMapping("/search")
+        @PreAuthorize("permitAll()")
+        public ResponseEntity<List<ProductDto>> searchProducts(
+                @RequestParam(required = false) Long categoryId,
+                @RequestParam(required = false) java.math.BigDecimal minPrice,
+                @RequestParam(required = false) java.math.BigDecimal maxPrice,
+                @RequestParam(required = false) String search
+        ) {
+            List<ProductDto> products = productRepository.searchProducts(categoryId, minPrice, maxPrice, search).stream()
+                    .map(this::convertToDto)
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(products);
+        }
+
         @GetMapping("/{id}")
         @PreAuthorize("permitAll()")
         public ResponseEntity<ProductDto> getProductById(@PathVariable Long id) {
@@ -75,6 +89,7 @@ public class ProductController {
                 return ProductDto.builder()
                                 .id(p.getId())
                                 .name(p.getName())
+                                .brand(p.getBrand())
                                 .sku(p.getSku())
                                 .unitPrice(p.getUnitPrice().doubleValue())
                                 .categoryName(p.getCategory() != null ? p.getCategory().getName() : "Uncategorized")
@@ -87,6 +102,7 @@ public class ProductController {
 
         private void updateProductFromDto(com.ecommerce.analytics.entities.Product p, ProductDto dto) {
                 p.setName(dto.getName());
+                p.setBrand(dto.getBrand());
                 p.setSku(dto.getSku());
                 p.setUnitPrice(java.math.BigDecimal.valueOf(dto.getUnitPrice()));
                 p.setDescription(dto.getDescription());

@@ -64,9 +64,6 @@ ecommerce-analytics-platform/
 │   │   ├── 01_create_tables.sql
 │   │   ├── 02_indexes.sql
 │   │   └── 03_seed_data.sql
-│   └── etl/
-│       ├── field_mapping.md    # ETL dokümantasyonu
-│       └── etl_pipeline.py     # Veri dönüşüm script'leri
 │
 ├── docs/
 │   ├── architecture.md
@@ -85,26 +82,18 @@ ecommerce-analytics-platform/
 USERS (id, email, password_hash, role_type, gender)
   ├── STORES (id, owner_id, name, status)
   ├── CUSTOMER_PROFILES (id, user_id, age, city, membership_type)
-  └── ORDERS (id, user_id, store_id, status, grand_total)
+  ├── ADDRESSES (id, user_id, title, city, full_address, is_default)
+  └── ORDERS (id, user_id, store_id, status, grand_total, shipping_address)
         ├── ORDER_ITEMS (id, order_id, product_id, quantity, price)
         └── SHIPMENTS (id, order_id, warehouse, mode, status)
 
-PRODUCTS (id, store_id, category_id, sku, name, unit_price)
-  └── REVIEWS (id, user_id, product_id, star_rating, sentiment)
+PRODUCTS (id, store_id, category_id, sku, name, unit_price, brand, description)
+  ├── REVIEWS (id, user_id, product_id, star_rating, sentiment)
+  └── INVENTORY (id, product_id, stock_quantity)
 
-CATEGORIES (id, name, parent_id)
+COUPONS (id, code, discount_percentage, expiration_date, active)
+NOTIFICATIONS (id, user_id, message, is_read, created_at)
 ```
-
-### Kullanılan Kaggle Datasetleri
-
-| # | Dataset | Hedef Tablolar |
-|---|---------|---------------|
-| 1 | UCI Online Retail | Orders, OrderItems, Products |
-| 2 | Customer Behavior | Users, CustomerProfiles |
-| 3 | Shipping Data | Shipments |
-| 4 | Amazon Sales | Orders (status, fulfilment) |
-| 5 | Pakistan E-Commerce | Orders, OrderItems, PaymentMethods |
-| 6 | Amazon US Reviews | Reviews |
 
 ---
 
@@ -220,11 +209,7 @@ class AgentState(TypedDict):
 # MySQL için
 mysql -u root -p < database/schema/01_create_tables.sql
 mysql -u root -p < database/schema/02_indexes.sql
-
-# ETL - Kaggle datasetlerini yükle
-cd database/etl
-pip install -r requirements.txt
-python etl_pipeline.py
+mysql -u root -p < database/schema/03_seed_data.sql
 ```
 
 ### 2. Backend (Spring Boot)

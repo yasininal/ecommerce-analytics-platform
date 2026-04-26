@@ -39,6 +39,7 @@ CREATE TABLE products (
     category_id BIGINT,
     sku VARCHAR(100) NOT NULL UNIQUE,
     name VARCHAR(255) NOT NULL,
+    brand VARCHAR(100),
     description TEXT,
     unit_price DECIMAL(10, 2) NOT NULL,
     stock_quantity INT DEFAULT 100,
@@ -53,6 +54,7 @@ CREATE TABLE orders (
     store_id BIGINT NOT NULL,
     status ENUM('PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'RETURNED', 'REFUNDED') DEFAULT 'PENDING',
     grand_total DECIMAL(10, 2) NOT NULL,
+    shipping_address TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE
@@ -106,5 +108,32 @@ CREATE TABLE refresh_tokens (
     token VARCHAR(255) NOT NULL UNIQUE,
     expiry_date DATETIME NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE addresses (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    title VARCHAR(50) NOT NULL, -- Home, Work, etc.
+    full_address TEXT NOT NULL,
+    city VARCHAR(100),
+    is_default BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE notifications (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    message TEXT NOT NULL,
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE coupons (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    discount_percentage DECIMAL(5, 2) NOT NULL,
+    expiry_date DATETIME NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE
 );
 
