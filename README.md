@@ -9,8 +9,8 @@
 
 | İsim | Rol |
 |------|-----|
-| [İsim 1] | Backend + AI Chatbot |
-| [İsim 2] | Frontend + Database |
+| Yasin Taha İnal | Backend + AI Chatbot |
+| Emre Erdoğan | Frontend + Database |
 
 ---
 
