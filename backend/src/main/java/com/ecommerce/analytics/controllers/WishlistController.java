@@ -26,7 +26,7 @@ public class WishlistController {
     private final ProductRepository productRepository;
 
     @GetMapping("/user/{userId}")
-    @PreAuthorize("hasRole('INDIVIDUAL')")
+    @PreAuthorize("hasAnyRole('INDIVIDUAL', 'CORPORATE', 'ADMIN')")
     public ResponseEntity<List<WishlistDto>> getUserWishlist(@PathVariable Long userId) {
         List<WishlistDto> wishlist = wishlistRepository.findByUserId(userId).stream()
                 .map(w -> WishlistDto.builder()
@@ -42,7 +42,7 @@ public class WishlistController {
     }
 
     @PostMapping("/user/{userId}/product/{productId}")
-    @PreAuthorize("hasRole('INDIVIDUAL')")
+    @PreAuthorize("hasAnyRole('INDIVIDUAL', 'CORPORATE', 'ADMIN')")
     @Transactional
     public ResponseEntity<Void> toggleWishlist(@PathVariable Long userId, @PathVariable Long productId) {
         if (wishlistRepository.existsByUserIdAndProductId(userId, productId)) {
@@ -61,7 +61,7 @@ public class WishlistController {
     }
     
     @GetMapping("/user/{userId}/product/{productId}/check")
-    @PreAuthorize("hasRole('INDIVIDUAL')")
+    @PreAuthorize("hasAnyRole('INDIVIDUAL', 'CORPORATE', 'ADMIN')")
     public ResponseEntity<Boolean> checkWishlist(@PathVariable Long userId, @PathVariable Long productId) {
         boolean exists = wishlistRepository.existsByUserIdAndProductId(userId, productId);
         return ResponseEntity.ok(exists);

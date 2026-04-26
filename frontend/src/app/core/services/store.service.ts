@@ -28,4 +28,8 @@ export class StoreService {
     updateStore(id: number, data: Partial<StoreData>): Observable<StoreData> {
         return this.http.put<StoreData>(`${this.apiUrl}/${id}`, data);
     }
+
+    createStore(data: Partial<StoreData>): Observable<StoreData> {
+        return this.http.post<StoreData>(this.apiUrl, data);
+    }
 }

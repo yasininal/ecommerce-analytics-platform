@@ -12,8 +12,19 @@ import { AuthService } from '../../core/auth/auth.service';
     <div class="page-content">
       <div class="section-header">
         <div>
-          <h1>Store Settings</h1>
           <p>Manage your store profile and status</p>
+        </div>
+      </div>
+
+      <!-- Add Store Section (Admin Only) -->
+      <div class="card" *ngIf="isAdmin" style="margin-bottom: 24px;">
+        <h3 style="margin-bottom: 16px;">Add New Store 🏪</h3>
+        <div style="display:flex; gap:12px; flex-wrap:wrap">
+          <input type="text" class="dp-input" placeholder="Store Name" [(ngModel)]="newStore.name" style="flex:1" />
+          <input type="email" class="dp-input" placeholder="Owner Email (Corporate User)" [(ngModel)]="newStore.ownerEmail" style="flex:1" />
+          <button class="btn btn-primary" (click)="addStore()" [disabled]="addingStore">
+            {{ addingStore ? 'Adding...' : 'Create Store' }}
+          </button>
         </div>
       </div>
 
@@ -129,11 +140,32 @@ export class SettingsComponent implements OnInit {
   updatingId: number | null = null;
   successMsg: number | null = null;
   errorMsg: number | null = null;
+  
+  isAdmin = false;
+  addingStore = false;
+  newStore = { name: '', ownerEmail: '' };
 
   constructor(private storeService: StoreService, private authService: AuthService) {}
 
   ngOnInit() {
+    this.isAdmin = this.authService.hasRole('ROLE_ADMIN');
     this.loadStores();
+  }
+
+  addStore() {
+    if (!this.newStore.name || !this.newStore.ownerEmail) return;
+    this.addingStore = true;
+    this.storeService.createStore(this.newStore).subscribe({
+      next: () => {
+        this.addingStore = false;
+        this.newStore = { name: '', ownerEmail: '' };
+        this.loadStores();
+      },
+      error: (err) => {
+        this.addingStore = false;
+        alert('Failed to create store: ' + (err.error?.message || 'User not found or not Corporate'));
+      }
+    });
   }
 
   loadStores() {

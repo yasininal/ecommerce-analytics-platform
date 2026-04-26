@@ -47,4 +47,22 @@ public class CustomerController {
         userRepository.deleteById(id);
         return ResponseEntity.noContent().build();
     }
+
+    @PutMapping("/{id}/membership")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> updateMembership(@PathVariable Long id, @RequestBody java.util.Map<String, String> body) {
+        String typeStr = body.get("membershipType");
+        if (typeStr == null) return ResponseEntity.badRequest().body("Membership type is required");
+
+        var profile = customerProfileRepository.findByUserId(id).orElse(null);
+        if (profile == null) return ResponseEntity.notFound().build();
+
+        try {
+            profile.setMembershipType(com.ecommerce.analytics.entities.CustomerProfile.MembershipType.valueOf(typeStr));
+            customerProfileRepository.save(profile);
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body("Invalid membership type: " + typeStr);
+        }
+    }
 }

@@ -36,30 +36,36 @@ import { AuthService } from '../../../core/auth/auth.service';
       </div>
       <div class="login-right">
         <div class="login-card">
-          <h1 class="login-title">Welcome back</h1>
-          <p class="login-subtitle">Sign in to your account to continue</p>
+          <h1 class="login-title">{{ isRegistering ? 'Create Account' : 'Welcome back' }}</h1>
+          <p class="login-subtitle">{{ isRegistering ? 'Join the DataPulse platform today' : 'Sign in to your account to continue' }}</p>
 
-          <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+          <form [formGroup]="authForm" (ngSubmit)="onSubmit()" class="login-form">
             <div class="field-group">
               <label class="field-label">Email address</label>
               <input
-                id="email"
                 type="email"
                 formControlName="email"
                 class="dp-input field-input"
-                placeholder="admin@platform.com"
+                placeholder="email@example.com"
               />
             </div>
 
             <div class="field-group">
               <label class="field-label">Password</label>
               <input
-                id="password"
                 type="password"
                 formControlName="password"
                 class="dp-input field-input"
                 placeholder="••••••••"
               />
+            </div>
+
+            <div class="field-group" *ngIf="isRegistering">
+              <label class="field-label">Role</label>
+              <select formControlName="role" class="dp-input field-input">
+                <option value="INDIVIDUAL">Individual Buyer</option>
+                <option value="CORPORATE">Corporate Seller</option>
+              </select>
             </div>
 
             <div *ngIf="error" class="login-error">
@@ -69,14 +75,21 @@ import { AuthService } from '../../../core/auth/auth.service';
             <button
               type="submit"
               class="btn btn-accent login-btn"
-              [disabled]="loginForm.invalid || loading"
+              [disabled]="authForm.invalid || loading"
             >
-              <span *ngIf="!loading">Sign In →</span>
+              <span *ngIf="!loading">{{ isRegistering ? 'Register' : 'Sign In' }} →</span>
               <span *ngIf="loading" class="spinner" style="width:16px;height:16px;margin:0"></span>
             </button>
           </form>
 
-          <div class="login-hint">
+          <div style="text-align:center; margin-top:20px; font-size:14px; color:var(--text-secondary)">
+            {{ isRegistering ? 'Already have an account?' : "Don't have an account?" }}
+            <a href="javascript:void(0)" (click)="toggleMode()" style="color:var(--accent); font-weight:600; text-decoration:none">
+              {{ isRegistering ? 'Sign In' : 'Register Now' }}
+            </a>
+          </div>
+
+          <div class="login-hint" *ngIf="!isRegistering">
             <p>Demo credentials:</p>
             <div class="hint-credentials">
               <code>admin&#64;platform.com</code> / <code>password123</code>
@@ -239,42 +252,71 @@ import { AuthService } from '../../../core/auth/auth.service';
   `]
 })
 export class LoginComponent {
-  loginForm: FormGroup;
+  authForm: FormGroup;
   error = '';
   loading = false;
+  isRegistering = false;
 
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
     private router: Router
   ) {
-    this.loginForm = this.fb.group({
+    this.authForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
-      password: ['', Validators.required]
+      password: ['', Validators.required],
+      role: ['INDIVIDUAL']
     });
   }
 
+  toggleMode() {
+    this.isRegistering = !this.isRegistering;
+    this.error = '';
+    if (this.isRegistering) {
+        this.authForm.get('role')?.setValidators([Validators.required]);
+    } else {
+        this.authForm.get('role')?.clearValidators();
+    }
+    this.authForm.get('role')?.updateValueAndValidity();
+  }
+
   onSubmit() {
-    if (this.loginForm.valid) {
+    if (this.authForm.valid) {
       this.loading = true;
       this.error = '';
-      this.authService.login(this.loginForm.value).subscribe({
-        next: (res) => {
-          this.loading = false;
-          localStorage.setItem('roles', JSON.stringify(res.roles));
-          if (res.roles.includes('ROLE_ADMIN')) {
-            this.router.navigate(['/admin/dashboard']);
-          } else if (res.roles.includes('ROLE_CORPORATE')) {
-            this.router.navigate(['/corporate/dashboard']);
-          } else {
-            this.router.navigate(['/individual/dashboard']);
-          }
-        },
-        error: () => {
-          this.loading = false;
-          this.error = 'Giriş başarısız. Lütfen bilgilerinizi kontrol edin.';
-        }
-      });
+
+      if (this.isRegistering) {
+        this.authService.register(this.authForm.value).subscribe({
+            next: () => {
+                this.isRegistering = false;
+                this.loading = false;
+                alert('Account created successfully! Please sign in.');
+            },
+            error: (err) => {
+                this.loading = false;
+                this.error = err.error?.message || 'Registration failed.';
+            }
+        });
+      } else {
+        this.authService.login(this.authForm.value).subscribe({
+            next: (res) => {
+              this.loading = false;
+              localStorage.setItem('roles', JSON.stringify(res.roles));
+              localStorage.setItem('userEmail', res.email);
+              if (res.roles.includes('ROLE_ADMIN')) {
+                this.router.navigate(['/admin/dashboard']);
+              } else if (res.roles.includes('ROLE_CORPORATE')) {
+                this.router.navigate(['/corporate/dashboard']);
+              } else {
+                this.router.navigate(['/individual/dashboard']);
+              }
+            },
+            error: (err) => {
+              this.loading = false;
+              this.error = 'Invalid email or password.';
+            }
+          });
+      }
     }
   }
 }

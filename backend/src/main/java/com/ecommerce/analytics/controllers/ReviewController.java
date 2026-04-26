@@ -50,8 +50,20 @@ public class ReviewController {
                 return ResponseEntity.ok(reviews);
         }
 
+        @GetMapping("/my-reviews")
+        @PreAuthorize("hasAnyRole('INDIVIDUAL', 'CORPORATE', 'ADMIN')")
+        public ResponseEntity<List<ReviewDto>> getMyReviews() {
+            com.ecommerce.analytics.security.UserDetailsImpl userDetails = 
+                (com.ecommerce.analytics.security.UserDetailsImpl) org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            
+            List<ReviewDto> reviews = reviewRepository.findByUserId(userDetails.getId()).stream()
+                            .map(this::convertToDto)
+                            .collect(Collectors.toList());
+            return ResponseEntity.ok(reviews);
+        }
+
         @PostMapping
-        @PreAuthorize("hasRole('INDIVIDUAL')")
+        @PreAuthorize("hasAnyRole('INDIVIDUAL', 'CORPORATE', 'ADMIN')")
         @Transactional
         public ResponseEntity<ReviewDto> createReview(@RequestBody ReviewRequestDto request) {
             Review review = new Review();

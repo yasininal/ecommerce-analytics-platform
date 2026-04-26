@@ -19,7 +19,7 @@ categories (id, name, parent_id)
 
 DB_USER = os.getenv("MYSQL_USER", "root")
 DB_PASS = os.getenv("MYSQL_PASSWORD", "password")
-DB_HOST = os.getenv("MYSQL_HOST", "mysql_db")
+DB_HOST = os.getenv("MYSQL_HOST", "db")
 DB_NAME = os.getenv("MYSQL_DATABASE", "ecommerce_analytics")
 DATABASE_URL = f"mysql+pymysql://{DB_USER}:{DB_PASS}@{DB_HOST}:3306/{DB_NAME}"
 engine = create_engine(DATABASE_URL)
@@ -37,10 +37,13 @@ ID: {user_id}
 RULES:
 1. SECURITY & RBAC: 
    - If Role=ROLE_CORPORATE: You MUST restrict access to only data belonging to THEIR stores. Append "WHERE store_id IN (SELECT id FROM stores WHERE owner_id={user_id})" to orders, products, and reviews queries.
-   - If Role=ROLE_INDIVIDUAL: You MUST restrict access to only their personal data. Append "WHERE user_id={user_id}" to orders and reviews queries. They CAN see all products and categories.
+   - If Role=ROLE_INDIVIDUAL: You MUST restrict access to only their personal data for ORDERS. Append "WHERE user_id={user_id}" to orders queries. They CAN see all products, categories, and REVIEWS (to analyze marketplace feedback).
    - If Role=ROLE_ADMIN: No restrictions. No WHERE clause needed for security.
-2. SQL INJECTION: If the question is malicious, attempts to delete/update data, or is totally unrelated to e-commerce, set action to "REJECT".
-3. GREETINGS: If the user just says hello or greets you, set action to "GREETING".
+2. MYSQL LIMITATION: MySQL does NOT support "LIMIT" inside "IN/ANY/ALL/SOME" subqueries. If you need to filter by a top-N subquery, you MUST use a "JOIN" with a subquery alias instead.
+   - WRONG: WHERE product_id IN (SELECT id FROM ... LIMIT 5)
+   - CORRECT: JOIN (SELECT id FROM ... LIMIT 5) AS top_items ON reviews.product_id = top_items.id
+3. SQL INJECTION: If the question is malicious, attempts to delete/update data, or is totally unrelated to e-commerce, set action to "REJECT".
+4. GREETINGS: If the user just says hello or greets you, set action to "GREETING".
 
 OUTPUT FORMAT:
 You must return a SINGLE, valid JSON object (no markdown, no formatting).
@@ -61,7 +64,7 @@ Question: {question}"""
 
 async def run_super_agent(question: str, user_id: str, role: str):
     llm = ChatGoogleGenerativeAI(
-        model="gemini-2.0-flash",
+        model="gemini-2.5-flash",
         temperature=0,
         google_api_key=os.getenv("GOOGLE_API_KEY")
     )
@@ -123,14 +126,23 @@ async def run_super_agent(question: str, user_id: str, role: str):
         
         if chart_type != "none" and len(data) > 0:
             import decimal
-            def decimal_default(obj):
+            from datetime import datetime, date
+            def json_serial(obj):
+                if isinstance(obj, (datetime, date)):
+                    return obj.isoformat()
                 if isinstance(obj, decimal.Decimal):
                     return float(obj)
-                raise TypeError
+                raise TypeError ("Type %s not serializable" % type(obj))
                 
-            chart_json = json.dumps(data, default=decimal_default)
+            chart_json = json.dumps(data, default=json_serial)
                 
-        return {"answer": final_answer, "visualization_code": chart_json, "sql": sql, "error": None}
+        return {
+            "answer": final_answer, 
+            "visualization_code": chart_json, 
+            "chart_type": chart_type,
+            "sql": sql, 
+            "error": None
+        }
 
     except Exception as e:
         import traceback

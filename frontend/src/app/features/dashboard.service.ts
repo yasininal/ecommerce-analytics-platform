@@ -66,6 +66,7 @@ export interface ReviewData {
     userEmail: string;
     productName: string;
     starRating: number;
+    comment: string;
     sentiment: string;
 }
 
@@ -94,6 +95,9 @@ export class DashboardService {
     getOrders(): Observable<OrderData[]> { return this.http.get<OrderData[]>(`${this.baseApiUrl}/orders`); }
     getOrdersByStore(storeId: number): Observable<OrderData[]> { return this.http.get<OrderData[]>(`${this.baseApiUrl}/orders/store/${storeId}`); }
     getOrdersByUser(userId: number): Observable<OrderData[]> { return this.http.get<OrderData[]>(`${this.baseApiUrl}/orders/user/${userId}`); }
+    updateOrderStatus(id: number, status: string): Observable<any> {
+        return this.http.patch<any>(`${this.baseApiUrl}/orders/${id}/status`, { status });
+    }
 
     // Products
     getProducts(): Observable<ProductData[]> { return this.http.get<ProductData[]>(`${this.baseApiUrl}/products`); }
@@ -114,5 +118,19 @@ export class DashboardService {
     // Reviews
     getReviews(): Observable<ReviewData[]> { return this.http.get<ReviewData[]>(`${this.baseApiUrl}/reviews`); }
     getReviewsByStore(storeId: number): Observable<ReviewData[]> { return this.http.get<ReviewData[]>(`${this.baseApiUrl}/reviews/store/${storeId}`); }
+    getMyReviews(): Observable<ReviewData[]> { return this.http.get<ReviewData[]>(`${this.baseApiUrl}/reviews/my-reviews`); }
     deleteReview(id: number): Observable<void> { return this.http.delete<void>(`${this.baseApiUrl}/reviews/${id}`); }
+
+    // Customers Extension
+    updateCustomerMembership(id: number, membershipType: string): Observable<void> {
+        return this.http.put<void>(`${this.baseApiUrl}/customers/${id}/membership`, { membershipType });
+    }
+
+    registerUser(data: any): Observable<any> {
+        return this.http.post<any>(`${this.baseApiUrl}/auth/register`, data);
+    }
+
+    createStore(data: any): Observable<any> {
+        return this.http.post<any>(`${this.baseApiUrl}/stores`, data);
+    }
 }

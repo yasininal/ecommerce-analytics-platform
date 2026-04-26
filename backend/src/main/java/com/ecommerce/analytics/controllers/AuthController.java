@@ -34,7 +34,37 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenService refreshTokenService;
+    private final com.ecommerce.analytics.repositories.UserRepository userRepository;
+    private final com.ecommerce.analytics.repositories.CustomerProfileRepository customerProfileRepository;
+    private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
+
+    @PostMapping("/register")
+    public ResponseEntity<?> registerUser(@Valid @RequestBody com.ecommerce.analytics.controllers.dto.RegisterRequest registerRequest) {
+        if (userRepository.existsByEmail(registerRequest.getEmail())) {
+            return ResponseEntity.badRequest().body("Error: Email is already in use!");
+        }
+
+        com.ecommerce.analytics.entities.User user = com.ecommerce.analytics.entities.User.builder()
+                .email(registerRequest.getEmail())
+                .passwordHash(passwordEncoder.encode(registerRequest.getPassword()))
+                .roleType(com.ecommerce.analytics.entities.RoleType.valueOf(registerRequest.getRole()))
+                .gender(registerRequest.getGender() != null ? com.ecommerce.analytics.entities.Gender.valueOf(registerRequest.getGender()) : com.ecommerce.analytics.entities.Gender.OTHER)
+                .build();
+
+        user = userRepository.save(user);
+
+        // If it's a customer, create a profile
+        if (user.getRoleType() == com.ecommerce.analytics.entities.RoleType.INDIVIDUAL) {
+            com.ecommerce.analytics.entities.CustomerProfile profile = com.ecommerce.analytics.entities.CustomerProfile.builder()
+                    .user(user)
+                    .membershipType(com.ecommerce.analytics.entities.CustomerProfile.MembershipType.BASIC)
+                    .build();
+            customerProfileRepository.save(profile);
+        }
+
+        return ResponseEntity.ok("User registered successfully!");
+    }
 
     @PostMapping("/login")
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {

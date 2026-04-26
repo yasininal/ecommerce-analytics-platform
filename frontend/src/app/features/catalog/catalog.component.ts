@@ -75,7 +75,7 @@ export interface Product {
                <div class="card-overlay">
                  <button class="view-btn">View Details →</button>
                </div>
-               <button class="wishlist-btn" (click)="toggleWishlist($event, p.id)" *ngIf="isIndividual">
+               <button class="wishlist-btn" (click)="toggleWishlist($event, p.id)" *ngIf="canShop">
                   <span *ngIf="!wishlistedIds.has(p.id)">🤍</span>
                   <span *ngIf="wishlistedIds.has(p.id)">❤️</span>
                </button>
@@ -253,7 +253,7 @@ export class CatalogComponent implements OnInit {
     loading = true;
     addedIds = new Set<number>();
     wishlistedIds = new Set<number>();
-    isIndividual = false;
+    canShop = false;
 
     constructor(
         private http: HttpClient, 
@@ -262,12 +262,12 @@ export class CatalogComponent implements OnInit {
         private wishlistService: WishlistService,
         private authService: AuthService
     ) { 
-        this.isIndividual = this.authService.hasRole('ROLE_INDIVIDUAL');
+        this.canShop = !!this.authService.getUserId();
     }
 
     ngOnInit() { 
         this.loadProducts(); 
-        if (this.isIndividual) {
+        if (this.canShop) {
             this.loadWishlist();
         }
     }

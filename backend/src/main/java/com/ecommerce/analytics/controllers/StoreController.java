@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 public class StoreController {
 
     private final StoreRepository storeRepository;
+    private final com.ecommerce.analytics.repositories.UserRepository userRepository;
 
     @GetMapping("/my-store")
     @PreAuthorize("hasRole('CORPORATE')")
@@ -45,6 +46,32 @@ public class StoreController {
                 .ownerEmail(store.getOwner().getEmail())
                 .build()).collect(Collectors.toList());
         return ResponseEntity.ok(dtos);
+    }
+
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<StoreDto> createStore(@RequestBody StoreDto dto) {
+        com.ecommerce.analytics.entities.User owner = userRepository.findByEmail(dto.getOwnerEmail())
+                .orElseThrow(() -> new RuntimeException("Owner user not found with email: " + dto.getOwnerEmail()));
+        
+        if (owner.getRoleType() != com.ecommerce.analytics.entities.RoleType.CORPORATE && owner.getRoleType() != com.ecommerce.analytics.entities.RoleType.ADMIN) {
+            throw new RuntimeException("Only Corporate or Admin users can own a store");
+        }
+
+        Store store = Store.builder()
+                .name(dto.getName())
+                .owner(owner)
+                .status(Store.StoreStatus.ACTIVE)
+                .build();
+        
+        store = storeRepository.save(store);
+        
+        return ResponseEntity.ok(StoreDto.builder()
+                .id(store.getId())
+                .name(store.getName())
+                .status(store.getStatus().name())
+                .ownerEmail(owner.getEmail())
+                .build());
     }
 
     @PutMapping("/{id}")

@@ -39,8 +39,10 @@ CREATE TABLE products (
     category_id BIGINT,
     sku VARCHAR(100) NOT NULL UNIQUE,
     name VARCHAR(255) NOT NULL,
+    description TEXT,
     unit_price DECIMAL(10, 2) NOT NULL,
     stock_quantity INT DEFAULT 100,
+    image_url VARCHAR(500),
     FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE,
     FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
 );
@@ -49,7 +51,7 @@ CREATE TABLE orders (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT NOT NULL,
     store_id BIGINT NOT NULL,
-    status ENUM('PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'RETURNED') DEFAULT 'PENDING',
+    status ENUM('PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'RETURNED', 'REFUNDED') DEFAULT 'PENDING',
     grand_total DECIMAL(10, 2) NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -86,6 +88,16 @@ CREATE TABLE reviews (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+);
+
+CREATE TABLE wishlists (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    product_id BIGINT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_user_product (user_id, product_id)
 );
 
 CREATE TABLE refresh_tokens (

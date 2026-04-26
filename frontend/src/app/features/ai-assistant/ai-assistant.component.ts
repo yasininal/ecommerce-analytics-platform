@@ -8,6 +8,7 @@ interface ChatMessage {
     role: 'user' | 'bot';
     text: string;
     chartData?: any;
+    chartType?: string;
     sqlQuery?: string;
     guardrail?: { type: string; trigger: string; action: string; };
     timestamp: Date;
@@ -15,8 +16,9 @@ interface ChatMessage {
 
 interface ChatResponse {
     answer: string;
-    visualization_data?: string;
-    sql_query?: string;
+    visualization_code?: string;
+    chart_type?: string;
+    sql?: string;
     error?: string;
 }
 
@@ -58,11 +60,25 @@ interface ChatResponse {
                  <div class="text-content" *ngIf="!msg.guardrail">{{ msg.text }}</div>
                  
                  <!-- Dynamic Data Visualization -->
-                 <div *ngIf="msg.chartData && getChartItems(msg.chartData).length > 0 && !msg.guardrail" class="dynamic-chart">
-                    <div *ngFor="let item of getChartItems(msg.chartData) | slice:0:10" class="bar-group">
-                       <div class="bar-val">{{ getChartValue(item) }}</div>
-                       <div class="bar-body" [style.height.%]="getChartHeight(item, msg.chartData)"></div>
-                       <div class="bar-label">{{ getChartLabel(item) }}</div>
+                 <div *ngIf="msg.chartData && getChartItems(msg.chartData).length > 0 && !msg.guardrail" class="visualization-container">
+                    <!-- BAR CHART -->
+                    <div *ngIf="msg.chartType === 'bar'" class="dynamic-chart bar-chart">
+                       <div *ngFor="let item of getChartItems(msg.chartData) | slice:0:10" class="bar-group">
+                          <div class="bar-val">{{ getChartValue(item) }}</div>
+                          <div class="bar-body" [style.height.%]="getChartHeight(item, msg.chartData)"></div>
+                          <div class="bar-label">{{ getChartLabel(item) }}</div>
+                       </div>
+                    </div>
+
+                    <!-- PIE CHART -->
+                    <div *ngIf="msg.chartType === 'pie'" class="dynamic-chart pie-chart-container">
+                       <div class="pie-chart" [style.background]="getPieGradient(msg.chartData)"></div>
+                       <div class="pie-legend">
+                          <div *ngFor="let item of getChartItems(msg.chartData); let i = index" class="legend-item">
+                             <span class="color-dot" [style.background]="getChartColor(i)"></span>
+                             <span class="label">{{ getChartLabel(item) }} ({{ getChartValue(item) }})</span>
+                          </div>
+                       </div>
                     </div>
                  </div>
 
@@ -143,10 +159,18 @@ interface ChatResponse {
     .time { font-size: 11px; color: var(--text-muted); }
 
     .dynamic-chart { margin-top: 30px; border-top: 1px solid var(--border); padding-top: 30px; display: flex; align-items: flex-end; gap: 12px; height: 200px; }
+    .bar-chart { align-items: flex-end; }
     .bar-group { flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 10px; min-width: 0; }
     .bar-body { width: 100%; background: linear-gradient(180deg, var(--accent-light) 0%, var(--accent) 100%); border-radius: 6px; position: relative; min-height: 4px; transition: height 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
     .bar-val { font-size: 11px; font-weight: 800; }
     .bar-label { font-size: 10px; color: var(--text-muted); width: 100%; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .pie-chart-container { display: flex; align-items: center; justify-content: center; gap: 40px; height: auto; padding: 20px 0; }
+    .pie-chart { width: 150px; height: 150px; border-radius: 50%; box-shadow: 0 10px 30px rgba(0,0,0,0.3); border: 4px solid var(--bg-surface); }
+    .pie-legend { display: flex; flex-direction: column; gap: 8px; }
+    .legend-item { display: flex; align-items: center; gap: 10px; font-size: 12px; }
+    .color-dot { width: 10px; height: 10px; border-radius: 2px; }
+    .legend-item .label { color: var(--text-secondary); }
 
     .sql-block { background: #1a1a1a; padding: 12px; border-radius: 8px; margin-top: 16px; font-family: monospace; font-size: 11px; color: #a5b4fc; overflow-x: auto; border: 1px solid #333; }
     .guardrail-block { margin-top: 12px; border: 1px solid #ef4444; border-radius: 12px; overflow: hidden; background: rgba(239, 68, 68, 0.05); }
@@ -257,8 +281,9 @@ export class AiAssistantComponent {
                 this.messages.push({
                     role: 'bot',
                     text: res.answer || 'I processed your request.',
-                    chartData: res.visualization_data || null,
-                    sqlQuery: res.sql_query,
+                    chartData: res.visualization_code || null,
+                    chartType: res.chart_type || 'none',
+                    sqlQuery: res.sql || '',
                     guardrail: grData,
                     timestamp: new Date()
                 });
@@ -300,6 +325,24 @@ export class AiAssistantComponent {
         const val = this.getChartValue(item);
         const max = Math.max(...items.map(d => this.getChartValue(d)), 1);
         return (val / max) * 100;
+    }
+
+    getChartColor(index: number): string {
+        const colors = ['#f1641e', '#38bdf8', '#00c896', '#7c5cfc', '#ffb547', '#ff5c7a', '#a5b4fc', '#4ade80'];
+        return colors[index % colors.length];
+    }
+
+    getPieGradient(data: any): string {
+        const items = this.getChartItems(data);
+        const total = items.reduce((sum, item) => sum + this.getChartValue(item), 0);
+        let currentPct = 0;
+        const slices = items.map((item, i) => {
+            const pct = (this.getChartValue(item) / total) * 100;
+            const start = currentPct;
+            currentPct += pct;
+            return `${this.getChartColor(i)} ${start}% ${currentPct}%`;
+        });
+        return `conic-gradient(${slices.join(', ')})`;
     }
 
     private scrollToBottom() {

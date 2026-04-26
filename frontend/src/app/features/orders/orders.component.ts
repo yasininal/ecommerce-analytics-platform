@@ -64,12 +64,25 @@ import { AuthService } from '../../core/auth/auth.service';
               <td *ngIf="userRole === 'ROLE_ADMIN'">{{ order.storeName }}</td>
               <td style="color:var(--text-primary);font-weight:600">\${{ order.grandTotal | number:'1.2-2' }}</td>
               <td>
-                <span class="badge" [ngClass]="{
-                  'badge-success': order.status === 'DELIVERED',
-                  'badge-info': order.status === 'SHIPPED',
-                  'badge-warning': order.status === 'PENDING' || order.status === 'PROCESSING',
-                  'badge-danger': order.status === 'CANCELLED'
-                }">{{ order.status }}</span>
+                <div style="display:flex; align-items:center; gap:8px">
+                  <span class="badge" [ngClass]="{
+                    'badge-success': order.status === 'DELIVERED',
+                    'badge-info': order.status === 'SHIPPED',
+                    'badge-warning': order.status === 'PENDING' || order.status === 'PROCESSING',
+                    'badge-danger': order.status === 'CANCELLED'
+                  }">{{ order.status }}</span>
+                  
+                  <!-- Quick actions for Admin/Corporate -->
+                  <select *ngIf="userRole !== 'ROLE_INDIVIDUAL'" 
+                          class="status-select-sm"
+                          (change)="updateStatus(order.id, $event)">
+                    <option value="" disabled selected>Update...</option>
+                    <option value="PROCESSING">Processing</option>
+                    <option value="SHIPPED">Shipped</option>
+                    <option value="DELIVERED">Delivered</option>
+                    <option value="CANCELLED">Cancel</option>
+                  </select>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -85,6 +98,18 @@ import { AuthService } from '../../core/auth/auth.service';
     .page-content { padding: 28px 32px; }
     .filters-bar { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
     .avatar { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent-light)); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0; }
+    .status-select-sm {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 2px 6px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      outline: none;
+      cursor: pointer;
+    }
+    .status-select-sm:hover { border-color: var(--accent); }
   `]
 })
 export class OrdersComponent implements OnInit {
@@ -161,6 +186,22 @@ export class OrdersComponent implements OnInit {
       const matchStatus = this.statusFilter === 'ALL' || o.status === this.statusFilter;
       
       return matchSearch && matchStatus;
+    });
+  }
+
+  updateStatus(id: number, event: any) {
+    const newStatus = event.target.value;
+    if (!newStatus) return;
+
+    this.dashboardService.updateOrderStatus(id, newStatus).subscribe({
+      next: () => {
+        const order = this.orders.find(o => o.id === id);
+        if (order) {
+            order.status = newStatus;
+            this.onSearch(); // Refresh filter
+        }
+      },
+      error: () => alert('Failed to update order status.')
     });
   }
 }

@@ -53,7 +53,7 @@ interface OrderDto {
               <span class="value price">\${{ order.grandTotal.toFixed(2) }}</span>
             </div>
           </div>
-          <div class="order-progress">
+          <div class="order-progress" *ngIf="order.status !== 'CANCELLED' && order.status !== 'RETURNED' && order.status !== 'REFUNDED'">
             <div class="progress-step" [class.active]="isStepActive(order.status, 'PENDING')" [class.done]="isStepDone(order.status, 'PENDING')">
               <div class="step-dot"></div><span>Ordered</span>
             </div>
@@ -69,6 +69,10 @@ interface OrderDto {
             <div class="progress-step" [class.active]="isStepActive(order.status, 'DELIVERED')" [class.done]="isStepDone(order.status, 'DELIVERED')">
               <div class="step-dot"></div><span>Delivered</span>
             </div>
+          </div>
+          
+          <div class="order-actions" *ngIf="order.status === 'PENDING' || order.status === 'PROCESSING'">
+            <button class="cancel-btn" (click)="cancelOrder(order.id)">❌ Cancel Order</button>
           </div>
         </div>
       </div>
@@ -121,6 +125,10 @@ interface OrderDto {
     .progress-step.active span, .progress-step.done span { color: var(--text-primary); }
     .progress-line { flex: 1; height: 2px; background: var(--border); margin: 0 8px; margin-bottom: 20px; }
     .progress-line.filled { background: #22c55e; }
+
+    .order-actions { margin-top: 24px; display: flex; justify-content: flex-end; border-top: 1px solid var(--border); padding-top: 16px; }
+    .cancel-btn { background: rgba(248,113,113,0.1); color: #ef4444; border: 1px solid rgba(248,113,113,0.2); padding: 8px 16px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; transition: 0.2s; }
+    .cancel-btn:hover { background: #ef4444; color: white; transform: translateY(-2px); }
   `]
 })
 export class MyOrdersComponent implements OnInit {
@@ -149,5 +157,20 @@ export class MyOrdersComponent implements OnInit {
         const si = this.statusOrder.indexOf(status);
         const ti = this.statusOrder.indexOf(step);
         return si >= ti;
+    }
+
+    cancelOrder(orderId: number) {
+        if (confirm('Are you sure you want to cancel this order?')) {
+            this.http.post(`/api/orders/${orderId}/cancel`, {}).subscribe({
+                next: () => {
+                    const order = this.orders.find(o => o.id === orderId);
+                    if (order) order.status = 'CANCELLED';
+                },
+                error: (err) => {
+                    console.error('Error cancelling order:', err);
+                    alert('Could not cancel order. It might have already been shipped.');
+                }
+            });
+        }
     }
 }

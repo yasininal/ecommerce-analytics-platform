@@ -53,6 +53,7 @@ export const routes: Routes = [
             { path: 'reviews', component: ReviewsComponent },
             { path: 'catalog', component: CatalogComponent },
             { path: 'catalog/:id', component: ProductDetailComponent },
+            { path: 'favorites', loadComponent: () => import('./features/favorites/favorites.component').then(m => m.FavoritesComponent) },
             { path: 'settings', component: SettingsComponent },
             { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
         ]
@@ -73,6 +74,7 @@ export const routes: Routes = [
             { path: 'reviews', component: ReviewsComponent },
             { path: 'catalog', component: CatalogComponent },
             { path: 'catalog/:id', component: ProductDetailComponent },
+            { path: 'favorites', loadComponent: () => import('./features/favorites/favorites.component').then(m => m.FavoritesComponent) },
             { path: 'settings', component: SettingsComponent },
             { path: 'dashboard', redirectTo: 'dashboard', pathMatch: 'full' }
         ]
@@ -90,6 +92,7 @@ export const routes: Routes = [
             { path: 'catalog', component: CatalogComponent },
             { path: 'catalog/:id', component: ProductDetailComponent },
             { path: 'favorites', loadComponent: () => import('./features/favorites/favorites.component').then(m => m.FavoritesComponent) },
+            { path: 'reviews', component: ReviewsComponent },
             { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
         ]
     },

@@ -49,9 +49,9 @@ import { AuthService } from '../../core/auth/auth.service';
               <td>{{ s.mode }}</td>
               <td>
                 <span class="badge" [ngClass]="{
-                  'badge-info': s.status === 'SHIPPED',
+                  'badge-info': s.status === 'SHIPPED' || s.status === 'IN_TRANSIT',
                   'badge-success': s.status === 'DELIVERED',
-                  'badge-warning': s.status === 'PENDING'
+                  'badge-warning': s.status === 'PREPARING' || s.status === 'PENDING'
                 }">{{ s.status }}</span>
               </td>
             </tr>
@@ -97,7 +97,11 @@ export class ShipmentsComponent implements OnInit {
     if (this.authService.hasRole('ROLE_ADMIN')) {
       this.userRole = 'ROLE_ADMIN';
       this.dashboardService.getShipments().subscribe({
-        next: (data) => { this.shipments = data; this.loading = false; },
+        next: (data) => { 
+          this.shipments = data; 
+          this.updateStats(data);
+          this.loading = false; 
+        },
         error: () => this.loading = false
       });
     } else if (this.authService.hasRole('ROLE_CORPORATE')) {
@@ -126,5 +130,19 @@ export class ShipmentsComponent implements OnInit {
         this.loading = false;
       }
     }
+  }
+
+  updateStats(data: ShipmentData[]) {
+    const pending = data.filter(s => s.status === 'PENDING' || s.status === 'PREPARING').length;
+    const transit = data.filter(s => s.status === 'IN_TRANSIT' || s.status === 'OUT_FOR_DELIVERY').length;
+    const delivered = data.filter(s => s.status === 'DELIVERED').length;
+    const returned = data.filter(s => s.status === 'RETURNED').length;
+
+    this.stats = [
+      { icon: '⏳', label: 'Pending', value: pending.toString(), bg: 'rgba(255,181,71,0.2)' },
+      { icon: '🚚', label: 'In Transit', value: transit.toString(), bg: 'rgba(56,189,248,0.2)' },
+      { icon: '✅', label: 'Delivered', value: delivered.toString(), bg: 'rgba(0,200,150,0.2)' },
+      { icon: '↩️', label: 'Returns', value: returned.toString(), bg: 'rgba(255,92,122,0.2)' },
+    ];
   }
 }

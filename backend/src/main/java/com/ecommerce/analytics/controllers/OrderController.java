@@ -139,6 +139,40 @@ public class OrderController {
                 }
         }
 
+        /**
+         * Cancel order (user cancels their own order)
+         */
+        @PostMapping("/{orderId}/cancel")
+        @PreAuthorize("hasRole('INDIVIDUAL') or hasRole('CORPORATE') or hasRole('ADMIN')")
+        public ResponseEntity<?> cancelOrder(@PathVariable Long orderId) {
+                Order order = orderRepository.findById(orderId).orElse(null);
+                if (order == null) {
+                    return ResponseEntity.notFound().build();
+                }
+
+                // Check ownership
+                Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+                UserDetailsImpl userDetails = (UserDetailsImpl) auth.getPrincipal();
+                boolean isAdmin = userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
+                if (!isAdmin && !order.getUser().getId().equals(userDetails.getId())) {
+                    return ResponseEntity.status(403).body(Map.of("error", "You can only cancel your own orders"));
+                }
+
+                // Only allow cancellation if PENDING or PROCESSING
+                if (order.getStatus() != Order.OrderStatus.PENDING && order.getStatus() != Order.OrderStatus.PROCESSING) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "Order cannot be cancelled in its current status: " + order.getStatus()));
+                }
+
+                order.setStatus(Order.OrderStatus.CANCELLED);
+                orderRepository.save(order);
+                return ResponseEntity.ok(Map.of(
+                    "message", "Order cancelled successfully",
+                    "orderId", order.getId(),
+                    "status", order.getStatus().name()
+                ));
+        }
+
         private OrderDto toDto(Order o) {
                 return new OrderDto(
                         o.getId(),

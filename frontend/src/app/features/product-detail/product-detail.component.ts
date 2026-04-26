@@ -102,7 +102,7 @@ interface Review {
                     <span class="rev-user">{{ rev.userEmail }}</span>
                     <span class="rev-stars">{{ '★'.repeat(rev.starRating) }}{{ '☆'.repeat(5 - rev.starRating) }}</span>
                   </div>
-                  <div class="rev-sentiment" [ngClass]="rev.sentiment?.toLowerCase()">
+                  <div class="rev-sentiment" [ngClass]="rev.sentiment.toLowerCase()">
                     AI Sentiment: {{ rev.sentiment }}
                   </div>
                   <p class="rev-comment" *ngIf="rev.comment">{{ rev.comment }}</p>
@@ -113,7 +113,7 @@ interface Review {
               </div>
 
               <!-- Write Review Form -->
-              <div class="write-review-box" *ngIf="isIndividual">
+              <div class="write-review-box" *ngIf="canShop">
                  <h4 style="margin-top:20px; font-weight:700;">Write a Review</h4>
                  <div class="star-rating-select">
                     <span *ngFor="let s of [1,2,3,4,5]" (click)="newReview.starRating = s" 
@@ -227,7 +227,7 @@ export class ProductDetailComponent implements OnInit {
     reviews: Review[] = [];
     quantity = 1;
     addedToCart = false;
-    isIndividual = false;
+    canShop = false;
     newReview = { starRating: 0, comment: '' };
     
     constructor(
@@ -236,7 +236,7 @@ export class ProductDetailComponent implements OnInit {
         private cartService: CartService,
         private authService: AuthService
     ) { 
-        this.isIndividual = this.authService.hasRole('ROLE_INDIVIDUAL');
+        this.canShop = !!this.authService.getUserId();
     }
 
     ngOnInit(): void {

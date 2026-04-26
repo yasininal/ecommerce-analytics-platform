@@ -11,20 +11,16 @@ import { AuthService } from '../../core/auth/auth.service';
     <div class="page-content">
       <div class="section-header">
         <div>
-          <h1>Reviews ⭐</h1>
-          <p>Customer ratings and feedback</p>
+          <h1>{{ userRole === 'ROLE_INDIVIDUAL' ? 'My Reviews 📝' : 'Reviews ⭐' }}</h1>
+          <p>{{ userRole === 'ROLE_INDIVIDUAL' ? 'Manage your product feedback' : 'Customer ratings and feedback' }}</p>
         </div>
       </div>
 
-      <div *ngIf="userRole === 'ROLE_INDIVIDUAL'" style="padding:40px; text-align:center; color:var(--text-secondary)">
-         You do not have permission to view store reviews.
-      </div>
+      <div *ngIf="loading" style="padding:40px; text-align:center; color:var(--text-secondary)">Loading reviews...</div>
 
-      <ng-container *ngIf="userRole !== 'ROLE_INDIVIDUAL'">
-        <div *ngIf="loading" style="padding:40px; text-align:center; color:var(--text-secondary)">Loading reviews...</div>
-
+      <ng-container *ngIf="!loading">
         <!-- Rating overview -->
-        <div class="rating-overview" *ngIf="!loading && reviews.length > 0">
+        <div class="rating-overview" *ngIf="userRole !== 'ROLE_INDIVIDUAL' && reviews.length > 0">
           <div class="rating-big card">
             <div class="big-score">{{ averageRating }}</div>
             <div class="stars">{{ getStars(averageRating) }}</div>
@@ -54,7 +50,14 @@ import { AuthService } from '../../core/auth/auth.service';
               </div>
               <div class="stars-sm">{{ '★'.repeat(review.starRating) }}{{ '☆'.repeat(5 - review.starRating) }}</div>
             </div>
-            <p class="review-text">{{ review.sentiment }}</p>
+            <p class="review-text" style="color:var(--text-primary); font-weight:500">"{{ review.comment }}"</p>
+            <div style="margin-bottom:12px">
+                <span class="badge" [ngClass]="{
+                    'badge-success': review.sentiment === 'POSITIVE',
+                    'badge-warning': review.sentiment === 'NEUTRAL',
+                    'badge-danger': review.sentiment === 'NEGATIVE'
+                }">{{ review.sentiment }}</span>
+            </div>
             <div style="display:flex; justify-content:space-between; align-items:center">
                 <div class="review-product">
                 <span>📦</span>
@@ -128,7 +131,10 @@ export class ReviewsComponent implements OnInit {
       });
     } else {
       this.userRole = 'ROLE_INDIVIDUAL';
-      this.loading = false;
+      this.dashboardService.getMyReviews().subscribe({
+        next: (data) => { this.processReviews(data); this.loading = false; },
+        error: () => this.loading = false
+      });
     }
   }
 
