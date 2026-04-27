@@ -1,7 +1,6 @@
 package com.ecommerce.analytics.services;
 
 import com.ecommerce.analytics.entities.Review;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -38,6 +37,7 @@ public class AiService {
             HttpEntity<Map<String, String>> entity = new HttpEntity<>(request, headers);
 
             // Timeout sayesinde 3 saniye içinde cevap gelmezse exception fırlatır ve fallback'e geçer
+            @SuppressWarnings("unchecked")
             Map<String, String> response = restTemplate.postForObject(chatbotUrl + "/api/sentiment", entity, Map.class);
             
             if (response != null && response.containsKey("sentiment")) {
