@@ -131,9 +131,15 @@ def generate_sql():
         ship_statuses = ['PREPARING', 'IN_TRANSIT', 'OUT_FOR_DELIVERY', 'DELIVERED']
         shipments.append(f"({i}, {i}, '{random.choice(warehouses)}', '{random.choice(modes)}', '{random.choice(ship_statuses)}', '2026-{random.randint(1,6):02}-{random.randint(1,28):02} 09:00:00')")
 
+    coupons = [
+        "(1, 'WELCOME25', 25.00, '2026-12-31 23:59:59', 1)",
+        "(2, 'TECH10', 10.00, '2026-06-30 23:59:59', 1)",
+        "(3, 'SPRING50', 50.00, '2026-05-15 23:59:59', 1)"
+    ]
+
     sql = "SET NAMES utf8mb4;\nUSE ecommerce_analytics;\n\n"
     sql += "SET FOREIGN_KEY_CHECKS = 0;\n"
-    sql += "TRUNCATE TABLE reviews;\nTRUNCATE TABLE shipments;\nTRUNCATE TABLE order_items;\nTRUNCATE TABLE orders;\nTRUNCATE TABLE products;\nTRUNCATE TABLE categories;\nTRUNCATE TABLE customer_profiles;\nTRUNCATE TABLE stores;\nTRUNCATE TABLE users;\n"
+    sql += "TRUNCATE TABLE coupons;\nTRUNCATE TABLE reviews;\nTRUNCATE TABLE shipments;\nTRUNCATE TABLE order_items;\nTRUNCATE TABLE orders;\nTRUNCATE TABLE products;\nTRUNCATE TABLE categories;\nTRUNCATE TABLE customer_profiles;\nTRUNCATE TABLE stores;\nTRUNCATE TABLE users;\n"
     sql += "SET FOREIGN_KEY_CHECKS = 1;\n\n"
     
     sql += "-- ========== USERS ==========\nINSERT INTO users (id, email, password_hash, role_type, gender) VALUES\n"
@@ -150,6 +156,8 @@ def generate_sql():
     sql += "-- ========== ORDER ITEMS ==========\nINSERT INTO order_items (id, order_id, product_id, quantity, price) VALUES\n" + ",\n".join(order_items) + ";\n\n"
     sql += "-- ========== SHIPMENTS ==========\nINSERT INTO shipments (id, order_id, warehouse, mode, status, shipped_at) VALUES\n" + ",\n".join(shipments) + ";\n\n"
     sql += "-- ========== REVIEWS ==========\nINSERT INTO reviews (id, user_id, product_id, star_rating, sentiment, comment, created_at) VALUES\n" + ",\n".join(reviews) + ";\n\n"
+    
+    sql += "-- ========== COUPONS ==========\nINSERT INTO coupons (id, code, discount_percentage, expiry_date, is_active) VALUES\n" + ",\n".join(coupons) + ";\n\n"
     
     return sql
 
