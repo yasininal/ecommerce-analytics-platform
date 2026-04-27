@@ -66,11 +66,16 @@ async def chat_endpoint(request: ChatRequest):
         if result.get("error") and result["error"] != "Rate Limit":
             return ChatResponse(answer=result["answer"], error=result["error"])
 
+        # Hide SQL for buyers (INDIVIDUAL)
+        final_sql = result.get("sql")
+        if request.role == "ROLE_INDIVIDUAL":
+            final_sql = None
+
         return ChatResponse(
             answer=result["answer"],
             visualization_code=result.get("visualization_code"),
             chart_type=result.get("chart_type"),
-            sql_query=result.get("sql")
+            sql_query=final_sql
         )
 
     except Exception as e:
