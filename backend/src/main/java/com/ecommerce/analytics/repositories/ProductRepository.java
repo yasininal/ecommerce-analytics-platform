@@ -12,8 +12,10 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     long countByStoreId(Long storeId);
 
-    @org.springframework.data.jpa.repository.Query("SELECT p FROM Product p WHERE " +
-            "(:categoryId IS NULL OR p.category.id = :categoryId OR p.category.parent.id = :categoryId) AND " +
+    @org.springframework.data.jpa.repository.Query("SELECT p FROM Product p " +
+            "JOIN FETCH p.category c " +
+            "JOIN FETCH p.store s " +
+            "WHERE (:categoryId IS NULL OR c.id = :categoryId OR c.parent.id = :categoryId) AND " +
             "(:minPrice IS NULL OR p.unitPrice >= :minPrice) AND " +
             "(:maxPrice IS NULL OR p.unitPrice <= :maxPrice) AND " +
             "(:search IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(p.brand) LIKE LOWER(CONCAT('%', :search, '%')))")
@@ -23,4 +25,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             @org.springframework.data.repository.query.Param("maxPrice") java.math.BigDecimal maxPrice,
             @org.springframework.data.repository.query.Param("search") String search
     );
+
+    @org.springframework.data.jpa.repository.Query("SELECT p FROM Product p JOIN FETCH p.category JOIN FETCH p.store")
+    List<Product> findAllWithRelations();
 }

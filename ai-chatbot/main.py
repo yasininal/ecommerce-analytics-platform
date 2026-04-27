@@ -34,6 +34,12 @@ class ChatResponse(BaseModel):
     sql_query: str | None = None
     error: str | None = None
 
+class SentimentRequest(BaseModel):
+    text: str
+
+class SentimentResponse(BaseModel):
+    sentiment: str # POSITIVE, NEUTRAL, NEGATIVE
+
 # Initialize Graph Workflow
 graph = build_workflow()
 
@@ -77,6 +83,35 @@ async def chat_endpoint(request: ChatRequest):
                 error="Rate limit exceeded"
             )
         raise HTTPException(status_code=500, detail=str(e))
+
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.messages import HumanMessage
+
+@app.post("/api/sentiment", response_model=SentimentResponse)
+async def sentiment_endpoint(request: SentimentRequest):
+    try:
+        llm = ChatGoogleGenerativeAI(
+            model="gemini-2.0-flash",
+            temperature=0,
+            max_retries=0,
+            timeout=2,
+            google_api_key=os.getenv("GOOGLE_API_KEY")
+        )
+        
+        system_prompt = "You are a sentiment analysis expert. Analyze the following e-commerce product review and return ONLY one of these words: POSITIVE, NEUTRAL, NEGATIVE. Do not provide any explanation."
+        
+        response = await llm.ainvoke([
+            HumanMessage(content=f"{system_prompt}\n\nReview: {request.text}")
+        ])
+        
+        sentiment = response.content.strip().upper()
+        if sentiment not in ["POSITIVE", "NEUTRAL", "NEGATIVE"]:
+            sentiment = "NEUTRAL"
+            
+        return SentimentResponse(sentiment=sentiment)
+    except Exception as e:
+        print(f"Sentiment Analysis Error: {e}")
+        return SentimentResponse(sentiment="ERROR")
 
 if __name__ == "__main__":
     import uvicorn

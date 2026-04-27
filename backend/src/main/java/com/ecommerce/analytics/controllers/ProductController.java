@@ -22,7 +22,7 @@ public class ProductController {
         @GetMapping
         @PreAuthorize("permitAll()")
         public ResponseEntity<List<ProductDto>> getAllProducts() {
-                List<ProductDto> products = productRepository.findAll().stream()
+                List<ProductDto> products = productRepository.findAllWithRelations().stream()
                                 .map(this::convertToDto)
                                 .collect(Collectors.toList());
                 return ResponseEntity.ok(products);

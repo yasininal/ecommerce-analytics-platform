@@ -18,7 +18,7 @@ interface ChatResponse {
     answer: string;
     visualization_code?: string;
     chart_type?: string;
-    sql?: string;
+    sql_query?: string;
     error?: string;
 }
 
@@ -31,7 +31,7 @@ interface ChatResponse {
       <div class="sidebar-info">
         <div class="brain-card" [class.active-think]="isLoading">
           <div class="brain-icon">🧠</div>
-          <h2>Data Brain AI</h2>
+          <h2>TrendAnalytix Brain</h2>
           <p>Analyzing your enterprise database in real-time. Ask questions naturally.</p>
           <div class="status-pill">
             <span class="pulse"></span> Active
@@ -50,7 +50,7 @@ interface ChatResponse {
         <div class="messages-scroll" #messagesArea>
           <div class="welcome-box">
              <div class="bot-ico">🤖</div>
-             <h1>Pulse Intelligence</h1>
+             <h1>TrendAnalytix AI</h1>
              <p>Welcome! I'm your NLP-powered analyst. I can cross-reference products, sales, and reviews to give you deep insights.</p>
           </div>
 
@@ -301,7 +301,7 @@ export class AiAssistantComponent {
                     text: res.answer || 'I processed your request.',
                     chartData: res.visualization_code || null,
                     chartType: res.chart_type || 'none',
-                    sqlQuery: res.sql || '',
+                    sqlQuery: res.sql_query || '',
                     guardrail: grData,
                     timestamp: new Date()
                 });

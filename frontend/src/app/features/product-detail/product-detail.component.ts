@@ -120,7 +120,12 @@ interface Review {
                           [class.active]="s <= newReview.starRating">★</span>
                  </div>
                  <textarea [(ngModel)]="newReview.comment" placeholder="What did you think about this product?" class="review-input"></textarea>
-                 <button class="primary-btn submit-rev-btn" (click)="submitReview()" [disabled]="newReview.starRating === 0 || !newReview.comment">Submit Review</button>
+                  <button class="primary-btn submit-rev-btn" 
+                          (click)="submitReview()" 
+                          [disabled]="newReview.starRating === 0 || !newReview.comment || isSubmitting">
+                    <span *ngIf="!isSubmitting">Submit Review</span>
+                    <span *ngIf="isSubmitting">🧠 AI Analyzing...</span>
+                  </button>
               </div>
             </div>
             
@@ -229,6 +234,7 @@ export class ProductDetailComponent implements OnInit {
     addedToCart = false;
     canShop = false;
     isLoggedIn = false;
+    isSubmitting = false;
     newReview = { starRating: 0, comment: '' };
     
     constructor(
@@ -280,10 +286,17 @@ export class ProductDetailComponent implements OnInit {
             starRating: this.newReview.starRating,
             comment: this.newReview.comment
         };
+        this.isSubmitting = true;
         this.http.post<Review>('/api/reviews', payload).subscribe({
             next: (rev) => {
                 this.reviews.unshift(rev);
                 this.newReview = { starRating: 0, comment: '' };
+                this.isSubmitting = false;
+            },
+            error: (err) => {
+                console.error('Review submission failed', err);
+                this.isSubmitting = false;
+                alert('Failed to submit review. Please try again.');
             }
         });
     }

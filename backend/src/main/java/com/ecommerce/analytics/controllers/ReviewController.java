@@ -6,6 +6,7 @@ import com.ecommerce.analytics.entities.Review;
 import com.ecommerce.analytics.repositories.ProductRepository;
 import com.ecommerce.analytics.repositories.ReviewRepository;
 import com.ecommerce.analytics.repositories.UserRepository;
+import com.ecommerce.analytics.services.AiService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -23,6 +24,7 @@ public class ReviewController {
         private final ReviewRepository reviewRepository;
         private final UserRepository userRepository;
         private final ProductRepository productRepository;
+        private final AiService aiService;
 
         @GetMapping
         @PreAuthorize("hasRole('ADMIN')")
@@ -72,13 +74,19 @@ public class ReviewController {
             review.setStarRating(request.getStarRating());
             review.setComment(request.getComment());
             
-            // Auto sentiment
-            if (request.getStarRating() >= 4) {
-                review.setSentiment(Review.Sentiment.POSITIVE);
-            } else if (request.getStarRating() == 3) {
-                review.setSentiment(Review.Sentiment.NEUTRAL);
+            // Try AI Sentiment
+            Review.Sentiment aiSentiment = aiService.analyzeSentiment(request.getComment());
+            if (aiSentiment != null) {
+                review.setSentiment(aiSentiment);
             } else {
-                review.setSentiment(Review.Sentiment.NEGATIVE);
+                // Fallback to star-based logic
+                if (request.getStarRating() >= 4) {
+                    review.setSentiment(Review.Sentiment.POSITIVE);
+                } else if (request.getStarRating() == 3) {
+                    review.setSentiment(Review.Sentiment.NEUTRAL);
+                } else {
+                    review.setSentiment(Review.Sentiment.NEGATIVE);
+                }
             }
             
             review = reviewRepository.save(review);
